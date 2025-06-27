@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bump-deps"
+version = "0.1.0"
+description = "Bump Python package dependencies in pyproject.toml"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Corey Goldberg"}]
+maintainers = [{name = "Corey Goldberg"}]
+readme = "README.md"
+requires-python = ">=3.9"
+keywords = ["package", "dependencies", "requirements", "bump", "upgrade"]
+classifiers = [
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = ["rich==14.0.0", "tomlkit==0.13.3"]
+
+[project.optional-dependencies]
+dev = ["tox==4.27.0"]
+validate = ["packaging==25.0", "validate-pyproject==0.24.1"]
+lint = ["black==25.1.0", "ruff==0.12.1"]
+
+[project.scripts]
+bump_deps = "bump_deps:main"
+
+[project.urls]
+homepage = "https://github.com/cgoldberg/bump-deps"
+source = "https://github.com/cgoldberg/bump-deps"
+download = "https://pypi.org/project/bump-deps"
+
+[tool.black]
+line-length = 120
+target-version = ["py39"]
+
+[tool.ruff]
+line-length = 120
+respect-gitignore = true
+target-version = "py39"
+
+[tool.ruff.lint]
+extend-select = ["E4", "E7", "E9", "F", "I", "E501", "RUF022"]
+fixable = ["ALL"]
+
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 120
