@@ -8,6 +8,9 @@
 - won't touch < or <= or > or >= or !=
 - only == or ~= or ===
 - doesn't handle all dependency specifiers supported by PEP508
+https://peps.python.org/pep-0508/
+https://packaging.python.org/en/latest/specifications/dependency-specifiers/#dependency-specifiers
+
 
 # Usage:
 ```

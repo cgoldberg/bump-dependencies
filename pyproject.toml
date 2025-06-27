@@ -24,12 +24,12 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
-dependencies = ["rich==14.0.0", "requests==2.32.4", "tomlkit==0.13.3"]
+dependencies = ["requests==2.32.4", "rich==14.0.0", "tomlkit==0.13.3", "validate-pyproject==0.24.1"]
 
 [project.optional-dependencies]
-dev = ["tox==4.27.0"]
-validate = ["packaging==25.0", "validate-pyproject==0.24.1"]
-lint = ["black==25.1.0", "ruff==0.12.1"]
+dev = ["tox"]
+test = ["pytest==8.4.1"]
+lint = ["black", "ruff"]
 
 [project.scripts]
 bump_deps = "bump_deps:main"
@@ -38,6 +38,15 @@ bump_deps = "bump_deps:main"
 homepage = "https://github.com/cgoldberg/bump-deps"
 source = "https://github.com/cgoldberg/bump-deps"
 download = "https://pypi.org/project/bump-deps"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.pytest.ini_options]
+# "-vv" means extra verbose
+# "-r fEsxXp" means show extra test summary info as specified by:
+#     (f)ailed, (E)rror, (s)kipped, (x)failed, (X)passed, (p)assed
+addopts = "-vv -r fEsxXp"
 
 [tool.black]
 line-length = 120
