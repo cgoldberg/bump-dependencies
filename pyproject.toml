@@ -24,7 +24,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
-dependencies = ["rich==14.0.0", "tomlkit==0.13.3"]
+dependencies = ["rich==14.0.0", "requests==2.32.4", "tomlkit==0.13.3"]
 
 [project.optional-dependencies]
 dev = ["tox==4.27.0"]
