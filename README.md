@@ -1,4 +1,4 @@
-# bump-deps
+# bump-dependencies
 
 ## Python - bump your package dependencies
 
@@ -8,7 +8,7 @@
 
 - Copyright (c) 2015-2025 [Corey Goldberg][github-home]
 - Development: [GitHub][github-repo]
-- Download/Install: [PyPI][pypi-bump-deps]
+- Download/Install: [PyPI][pypi-bump-dependencies]
 - License: [MIT][mit-license]
 
 ----
@@ -41,9 +41,9 @@ options:
 ```
 
 [github-home]: https://github.com/cgoldberg
-[github-repo]: https://github.com/cgoldberg/bump-deps
-[pypi-bump-deps]: https://pypi.org/project/bump-deps
-[mit-license]: https://raw.githubusercontent.com/cgoldberg/bump-deps/refs/heads/master/LICENSE
+[github-repo]: https://github.com/cgoldberg/bump-dependencies
+[pypi-bump-dependencies]: https://pypi.org/project/bump-dependencies
+[mit-license]: https://raw.githubusercontent.com/cgoldberg/bump-dependencies/refs/heads/master/LICENSE
 [pep-508]: https://peps.python.org/pep-0508
 [pep-735]: https://peps.python.org/pep-0735
 [pypa-dependency-specifiers]: https://packaging.python.org/en/latest/specifications/dependency-specifiers

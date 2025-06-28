@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "bump-deps"
+name = "bump-dependencies"
 version = "0.1.0"
 description = "Bump Python package dependencies in pyproject.toml"
 license = "MIT"
@@ -27,18 +27,18 @@ classifiers = [
 dependencies = ["packaging==25.0", "requests==2.32.4", "rich==14.0.0", "tomlkit==0.13.3", "validate-pyproject==0.24.1"]
 
 [project.scripts]
-bump_deps = "bump_deps:main"
+bump_dependencies = "bump_dependencies:main"
 
 [project.urls]
-homepage = "https://github.com/cgoldberg/bump-deps"
-source = "https://github.com/cgoldberg/bump-deps"
-download = "https://pypi.org/project/bump-deps"
+homepage = "https://github.com/cgoldberg/bump-dependencies"
+source = "https://github.com/cgoldberg/bump-dependencies"
+download = "https://pypi.org/project/bump-dependencies"
 
 [dependency-groups]
-group-a = ["foo"]
-group-b = ["foo>1.0"]
-group-c = ["foo<1.0"]
-all = ["foo", {include-group = "group-a"}, {include-group = "group-b"}, {include-group = "group-c"}]
+dev = ["tox"]
+lint = ["black", "ruff"]
+test = ["pytest==8.4.1"]
+validate = ["packaging==25.0", "validate-pyproject==0.24.1"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
