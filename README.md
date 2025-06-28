@@ -32,11 +32,11 @@ Updates dependency specifiers listed in:
 ## Usage:
 
 ```
-usage: bump_dependencies [-h] [--dry_run] [--path PATH]
+usage: bump_dependencies [-h] [--dry-run] [--path PATH]
 
 options:
   -h, --help   show this help message and exit
-  --dry_run    don't write changes to pyproject.toml
+  --dry-run    don't write changes to pyproject.toml
   --path PATH  path to pyproject.toml (defaults to current directory)
 ```
 

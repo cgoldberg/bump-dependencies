@@ -15,7 +15,7 @@ from validate_pyproject import api as validate_pyproject_api
 from validate_pyproject.errors import ValidationError
 
 
-def get_dependency_operator(dependency_specifier):
+def get_dependency_name_and_operator(dependency_specifier):
     illegal_chars = "/:@"
     if any(char in dependency_specifier for char in illegal_chars):
         raise ValueError("can't handle complex dependency specifiers")
@@ -30,7 +30,9 @@ def get_dependency_operator(dependency_specifier):
         raise ValueError("no version specified")
     elif len(operators) != 1:
         raise ValueError("can't handle complex dependency specifiers")
-    return operators[0]
+    operator = operators[0]
+    dependency_name = dependency_specifier.replace(" ", "").split(operator)[0]
+    return dependency_name, operator
 
 
 def get_dependencies_groups(pyproject_data):
@@ -56,16 +58,16 @@ def get_dependencies_groups(pyproject_data):
     return groups
 
 
-def update_dependency(dependency_specifier, operator):
-    dep_name = dependency_specifier.replace(" ", "").split(operator)[0]
-    new_dep_version = fetch_latest_package_version(dep_name)
+def update_dependency(dependency_specifier):
+    dependency_name, operator = get_dependency_name_and_operator(dependency_specifier)
+    new_dependency_version = fetch_latest_package_version(package_base_name(dependency_name))
     updated_dependency_specifier = None
-    if new_dep_version is not None:
+    if new_dependency_version is not None:
         if ";" in dependency_specifier:
             after_semi = "".join(dependency_specifier.split(";")[1:])
-            updated_dependency_specifier = f"{dep_name}{operator}{new_dep_version};{after_semi}"
+            updated_dependency_specifier = f"{dependency_name}{operator}{new_dependency_version};{after_semi}"
         else:
-            updated_dependency_specifier = f"{dep_name}{operator}{new_dep_version}"
+            updated_dependency_specifier = f"{dependency_name}{operator}{new_dependency_version}"
     return updated_dependency_specifier
 
 
@@ -77,12 +79,12 @@ def update_dependencies(dependency_specifiers):
             updated_dependency_specifiers.append(dependency_specifier)
             continue
         try:
-            operator = get_dependency_operator(dependency_specifier)
+            get_dependency_name_and_operator(dependency_specifier)
         except ValueError as e:
             print(f"- not updating: '{dependency_specifier}' ({e})")
             updated_dependency_specifiers.append(dependency_specifier)
             continue
-        updated_dependency_specifier = update_dependency(dependency_specifier, operator)
+        updated_dependency_specifier = update_dependency(dependency_specifier)
         if updated_dependency_specifier is not None:
             if dependency_specifier != updated_dependency_specifier:
                 print(f"- updating: '{dependency_specifier}' to '{updated_dependency_specifier}'")
@@ -96,10 +98,14 @@ def update_dependencies(dependency_specifiers):
     return updated_dependency_specifiers
 
 
-def fetch_latest_package_version(package_name):
+def package_base_name(package_name):
     match = re.match(r"^([^\[]+)\[.*\]$", package_name)
     if match:
-        package_name = match.group(1)
+        return match.group(1).strip()
+    return package_name.strip()
+
+
+def fetch_latest_package_version(package_name):
     url = f"https://pypi.org/pypi/{package_name}/json"
     try:
         response = requests.get(url)
@@ -160,9 +166,10 @@ def run(pyproject_toml_path, dry_run):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--dry_run",
+        "--dry-run",
         action="store_true",
         default=False,
+        dest="dry_run",
         help="don't write changes to pyproject.toml",
     )
     parser.add_argument(
