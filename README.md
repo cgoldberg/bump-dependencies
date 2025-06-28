@@ -32,7 +32,7 @@ Updates dependency specifiers listed in:
 ## Usage:
 
 ```
-usage: bump_deps [-h] [--dry_run] [--path PATH]
+usage: bump_dependencies [-h] [--dry_run] [--path PATH]
 
 options:
   -h, --help   show this help message and exit
