@@ -72,22 +72,26 @@ def update_dependency(dependency_specifier, operator):
 def update_dependencies(dependency_specifiers):
     updated_dependency_specifiers = []
     for dependency_specifier in dependency_specifiers:
+        if isinstance(dependency_specifier, tomlkit.items.InlineTable):
+            print(f"- skipping inline table: '{dependency_specifier}'")
+            updated_dependency_specifiers.append(dependency_specifier)
+            continue
         try:
             operator = get_dependency_operator(dependency_specifier)
         except ValueError as e:
-            print(f"not updating: '{dependency_specifier}' ({e})")
+            print(f"- not updating: '{dependency_specifier}' ({e})")
             updated_dependency_specifiers.append(dependency_specifier)
             continue
         updated_dependency_specifier = update_dependency(dependency_specifier, operator)
         if updated_dependency_specifier is not None:
             if dependency_specifier != updated_dependency_specifier:
-                print(f"updating: '{dependency_specifier}' to '{updated_dependency_specifier}'")
+                print(f"- updating: '{dependency_specifier}' to '{updated_dependency_specifier}'")
                 updated_dependency_specifiers.append(updated_dependency_specifier)
             else:
-                print(f"not updating: '{dependency_specifier}' (no new version available)")
+                print(f"- not updating: '{dependency_specifier}' (no new version available)")
                 updated_dependency_specifiers.append(dependency_specifier)
         else:
-            print(f"not updating: '{dependency_specifier}' (error retrieving version from pypi.org)")
+            print(f"- not updating: '{dependency_specifier}' (error retrieving version from pypi.org)")
             updated_dependency_specifiers.append(dependency_specifier)
     return updated_dependency_specifiers
 
@@ -145,7 +149,9 @@ def run(pyproject_toml_path, dry_run):
                     for dependency_group, dependency_specifiers in value.items()
                 }
 
-        if not dry_run:
+        if dry_run:
+            print("\nnot writing new pyproject.toml with updated dependencies")
+        else:
             with open(pyproject_toml_path, "w") as f:
                 tomlkit.dump(pyproject_data, f)
             print("\ngenerated new pyproject.toml with updated dependencies")

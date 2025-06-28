@@ -35,10 +35,10 @@ source = "https://github.com/cgoldberg/bump-deps"
 download = "https://pypi.org/project/bump-deps"
 
 [dependency-groups]
-dev = ["tox"]
-lint = ["black", "ruff"]
-test = ["pytest==8.4.1"]
-validate = ["packaging==25.0", "validate-pyproject==0.24.1"]
+group-a = ["foo"]
+group-b = ["foo>1.0"]
+group-c = ["foo<1.0"]
+all = ["foo", {include-group = "group-a"}, {include-group = "group-b"}, {include-group = "group-c"}]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
