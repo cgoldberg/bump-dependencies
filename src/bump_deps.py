@@ -34,14 +34,26 @@ def get_dependency_operator(dependency_specifier):
 
 
 def get_dependencies_groups(pyproject_data):
-    """Map each dependency group name to a list of dependency specifiers"""
-    main_dependency_specifiers = list(pyproject_data["project"].get("dependencies", []))
-    dependency_groups = dict(pyproject_data["project"].get("optional-dependencies", {}))
-    if main_dependency_specifiers:
-        dependency_groups.update({".": main_dependency_specifiers})
-    if not dependency_groups:
+    """Map each dependency group name to a list of dependency specifiers
+
+    This includes:
+        - `dependencies` list from `[project]` section
+        - dependency lists from `[project.optional-dependencies]` section
+        - dependency lists from `[dependency-groups]` section
+    """
+    groups = {}
+    project_dependencies = list(pyproject_data["project"].get("dependencies", []))
+    if project_dependencies:
+        groups.update({"project": project_dependencies})
+    optional_dependencies = dict(pyproject_data["project"].get("optional-dependencies", {}))
+    if optional_dependencies:
+        groups.update({"optional_dependencies": optional_dependencies})
+    dependency_groups = dict(pyproject_data.get("dependency-groups", {}))
+    if dependency_groups:
+        groups.update({"dependency_groups": dependency_groups})
+    if not groups:
         raise ValueError("no dependencies found")
-    return dependency_groups
+    return groups
 
 
 def update_dependency(dependency_specifier, operator):
@@ -97,7 +109,7 @@ def fetch_latest_package_version(package_name):
     return response.json()["info"]["version"]
 
 
-def run(pyproject_toml_path):
+def run(pyproject_toml_path, dry_run):
     console = Console()
     with console.status(""):
         print(f"loading: {pyproject_toml_path}")
@@ -115,32 +127,45 @@ def run(pyproject_toml_path):
         except ValidationError as e:
             exit(f"invalid pyproject.toml: {e.message}")
         try:
-            dependency_group_map = get_dependencies_groups(pyproject_data)
+            dependencies_groups_map = get_dependencies_groups(pyproject_data)
         except ValueError as e:
             exit(e)
-        updated_dependency_group_map = {
-            dependency_group: update_dependencies(dependency_specifiers)
-            for dependency_group, dependency_specifiers in dependency_group_map.items()
-        }
-        for dependency_group, dependency_specifiers in updated_dependency_group_map.items():
-            if dependency_group == ".":
-                pyproject_data["project"]["dependencies"] = dependency_specifiers
-            else:
-                pyproject_data["project"]["optional-dependencies"][dependency_group] = dependency_specifiers
-        with open(pyproject_toml_path, "w") as f:
-            tomlkit.dump(pyproject_data, f)
-        print("\ngenerated new pyproject.toml with updated dependencies")
+
+        for key, value in dependencies_groups_map.items():
+            if key == "project":
+                pyproject_data["project"]["dependencies"] = update_dependencies(value)
+            if key == "optional_dependencies":
+                pyproject_data["project"]["optional-dependencies"] = {
+                    dependency_group: update_dependencies(dependency_specifiers)
+                    for dependency_group, dependency_specifiers in value.items()
+                }
+            if key == "dependency_groups":
+                pyproject_data["dependency-groups"] = {
+                    dependency_group: update_dependencies(dependency_specifiers)
+                    for dependency_group, dependency_specifiers in value.items()
+                }
+
+        if not dry_run:
+            with open(pyproject_toml_path, "w") as f:
+                tomlkit.dump(pyproject_data, f)
+            print("\ngenerated new pyproject.toml with updated dependencies")
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "--dry_run",
+        action="store_true",
+        default=False,
+        help="don't write changes to pyproject.toml",
+    )
+    parser.add_argument(
         "--path",
         default=os.path.join(os.getcwd(), "pyproject.toml"),
-        help="path to pyproject.toml",
+        help="path to pyproject.toml (defaults to current directory)",
     )
     args = parser.parse_args()
-    run(args.path)
+    run(args.path, args.dry_run)
 
 
 if __name__ == "__main__":
