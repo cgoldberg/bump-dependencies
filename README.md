@@ -81,8 +81,8 @@ It will update dependency specifiers listed in various sections of `pyproject.to
     - `foo`
 - will not update direct reference dependency specifiers
   - example:
-    - `pip @ https://github.com/foo/bar/archive/1.0.0.zip`
-    - `pip @ file:///builds/foo-1.0.0-py3-none-any.whl`
+    - `foo @ https://github.com/foo/foo/archive/1.0.0.zip`
+    - `foo @ file:///builds/foo-1.0.0-py3-none-any.whl`
 
 #### Supported comparison operators in version identifiers:
 

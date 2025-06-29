@@ -24,7 +24,7 @@ def get_dependency_name_and_operator(dependency_specifier):
     invalid_operators = ("!=", "<=", "<")
     for op in invalid_operators:
         if op in dependency_specifier:
-            raise ValueError(f"skipping '{op}' version identifier")
+            raise ValueError(f"skipping unsupported '{op}' version identifier")
     valid_operators = ("===", "==", "~=", ">=", ">")
     operators = re.findall("|".join(valid_operators), dependency_specifier)
     if not operators:
