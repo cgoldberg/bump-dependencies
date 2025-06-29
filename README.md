@@ -86,17 +86,17 @@ It will update dependency specifiers listed in various sections of `pyproject.to
 
 #### Supported comparison operators in version identifiers:
 
-`==` : version matching
-`===` : arbitrary equality
-`~=` : compatible release
-`>` : exclusive ordered comparison
-`>=` : inclusive ordered comparison
+- `==` : version matching
+- `===` : arbitrary equality
+- `~=` : compatible release
+- `>` : exclusive ordered comparison
+- `>=` : inclusive ordered comparison
 
 #### Unsupported comparison operators in version identifiers:
 
-`<` : exclusive ordered comparison
-`<=` : inclusive ordered comparison
-`!=` : version exclusion
+- `<` : exclusive ordered comparison
+- `<=` : inclusive ordered comparison
+- `!=` : version exclusion
 
 ----
 
