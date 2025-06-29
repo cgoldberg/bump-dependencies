@@ -18,17 +18,44 @@
 `bump_dependencies` is a Python CLI program that generates a new packaging
 configuration file (`pyproject.toml`) file with updated package dependencies.
 
-For example, it would update:
+- for more information on declaring dependencies in a configuration file, see the [PyPA pyproject.toml Spec][pypa-pyproject-dependencies]
+- for more information on version specifiers, see [PEP 440][pep-440] and the [PyPA Version Specifiers Spec][pypa-version-specifiers]
+- for more information on dependency specifiers, see [PEP 508][pep-508] and the [PyPA Dependency Specifiers Spec][pypa-dependency-specifiers]
+- for more information on dependency groups, see [PEP 735][pep-735] and the [PyPA Dependency Groups Spec][pypa-dependency-groups]
+
+#### Example:
+
+If your `pyproject.toml` contains this:
 
 ```
-dependencies = ["pytest==8.2.0", "requests==2.30"]
+[project]
+... some metadata ...
+dependencies = ["matplotlib~=3.9", "requests==2.29.0"]
+
+[project.optional-dependencies]
+socks = ["PySocks>=1.5.6"]
+
+[dependency-groups]
+dev = ["black==23.9.1", "ruff==0.9.5"]
+test = ["pytest>8", "pytest-mock>=3.11"]
 ```
 
-to the latest versions on [PyPI][pypi-home]:
+It will update dependency specifiers to the latest versions available on [PyPI][pypi-home]:
 
 ```
-dependencies = ["pytest==8.4.1", "requests==2.32.4"]
+[project]
+... some metadata ...
+dependencies = ["matplotlib~=3.10.3", "requests==2.32.4"]
+
+[project.optional-dependencies]
+socks = ["PySocks>=1.7.1"]
+
+[dependency-groups]
+dev = ["black==25.1.0", "ruff==0.12.1"]
+test = ["pytest>8.4.1", "pytest-mock>=3.14.1"]
 ```
+
+#### Which sections of `pyproject.toml` will be updated?
 
 It will update dependency specifiers listed in various sections of `pyproject.toml`:
 
@@ -36,20 +63,28 @@ It will update dependency specifiers listed in various sections of `pyproject.to
 - dependency lists from `[project.optional-dependencies]` section
 - dependency lists from `[dependency-groups]` section
 
-Which dependency specifiers will be updated?
+#### Which dependency specifiers will be updated?
 
 - will only update dependency specifiers with version identifier
   containing comparison operator: `==`, `===`, `~=`, `>`, `>=`
-  (i.e. `package==1.0.0`)
+  - example:
+    - `foo==1.0.0`
+    - `foo>=1`
 - will not update dependency specifiers with version identifier
   containing comparison operator: `<`, `<=`, `!=`
-  (i.e. `package<1.0.0`)
-- will not update complex dependency specifiers with version identifiers
-  (i.e. `package ~=3.1.0, != 3.1.3`)
+  - example:
+    - `foo<2.0`
+    - `foo>=1,<2`
+    - `foo <=2.0, != 1.0.1`
 - will not update unversioned dependency specifiers
-  (i.e. `package`)
+  - example:
+    - `foo`
+- will not update direct reference dependency specifiers
+  - example:
+    - `pip @ https://github.com/foo/bar/archive/1.0.0.zip`
+    - `pip @ file:///builds/foo-1.0.0-py3-none-any.whl`
 
-Supported comparison operators in version identifiers:
+#### Supported comparison operators in version identifiers:
 
 `==` : version matching
 `===` : arbitrary equality
@@ -57,7 +92,7 @@ Supported comparison operators in version identifiers:
 `>` : exclusive ordered comparison
 `>=` : inclusive ordered comparison
 
-Unsupported comparison operators in version identifiers:
+#### Unsupported comparison operators in version identifiers:
 
 `<` : exclusive ordered comparison
 `<=` : inclusive ordered comparison
