@@ -6,7 +6,7 @@
 
 ---
 
-- Copyright (c) 2015-2025 [Corey Goldberg][github-home]
+- Copyright (c) 2025 [Corey Goldberg][github-home]
 - Development: [GitHub][github-repo]
 - Download/Install: [PyPI][pypi-bump-dependencies]
 - License: [MIT][mit-license]
