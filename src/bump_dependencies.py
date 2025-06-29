@@ -16,22 +16,23 @@ from validate_pyproject.errors import ValidationError
 
 
 def get_dependency_name_and_operator(dependency_specifier):
-    illegal_chars = "/:@"
+    illegal_chars = ("/", ":", "@")
     if any(char in dependency_specifier for char in illegal_chars):
-        raise ValueError("can't handle complex dependency specifiers")
+        raise ValueError("can't handle direct reference dependency specifiers")
     if ";" in dependency_specifier:
         dependency_specifier = dependency_specifier.split(";")[0]
-    invalid_operators = ("<=", "<", "!=", ">=", ">")
-    if any(op in dependency_specifier for op in invalid_operators):
-        raise ValueError("no pinned version specified")
-    valid_operators = ("==", "~=", "===")
+    invalid_operators = ("!=", "<=", "<")
+    for op in invalid_operators:
+        if op in dependency_specifier:
+            raise ValueError(f"skipping '{op}' version identifier")
+    valid_operators = ("===", "==", "~=", ">=", ">")
     operators = re.findall("|".join(valid_operators), dependency_specifier)
     if not operators:
         raise ValueError("no version specified")
     elif len(operators) != 1:
         raise ValueError("can't handle complex dependency specifiers")
     operator = operators[0]
-    dependency_name = dependency_specifier.replace(" ", "").split(operator)[0]
+    dependency_name = dependency_specifier.replace(" ", "").split(operator)[0].strip()
     return dependency_name, operator
 
 
@@ -99,7 +100,7 @@ def update_dependencies(dependency_specifiers):
 
 
 def get_package_base_name(package_name):
-    match = re.match(r"^([^\[]+)\[.*\]$", package_name)
+    match = re.match(r"^(.*?)\[", package_name)
     if match:
         return match.group(1).strip()
     return package_name.strip()

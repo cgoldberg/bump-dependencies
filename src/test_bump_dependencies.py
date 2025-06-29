@@ -8,6 +8,8 @@ import bump_dependencies
         "foo",
         " foo ",
         "  foo",
+        "foo[",
+        "foo [",
         "foo[bar]",
         "foo[ bar ]",
         "foo [bar]",
@@ -23,3 +25,18 @@ def package_name(request):
 def test_get_package_base_name(package_name):
     base_name = bump_dependencies.get_package_base_name(package_name)
     assert base_name == "foo"
+
+# TODO:
+# change tests for > and >= (now supported)
+#
+# add tests for:
+# "foo===1.0" # valid
+# "foo === 1.0" # valid
+# "foo==1!1.0" # valid
+# "foo~=1.1a1" # valid
+# "foo==1.1.*" # valid
+# "foo==2012.4" # valid
+# "foo==1.0.post2.dev3" # valid
+# "foo~=1.0.0,!=1.0.3" # invalid
+# "foo ~=1.0.0, != 1.0.3" # invalid
+# "foo >= 1.4.5, == 1.4.*" # complex
