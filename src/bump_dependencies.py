@@ -60,7 +60,7 @@ def get_dependencies_groups(pyproject_data):
 
 def update_dependency(dependency_specifier):
     dependency_name, operator = get_dependency_name_and_operator(dependency_specifier)
-    new_dependency_version = fetch_latest_package_version(package_base_name(dependency_name))
+    new_dependency_version = fetch_latest_package_version(get_package_base_name(dependency_name))
     updated_dependency_specifier = None
     if new_dependency_version is not None:
         if ";" in dependency_specifier:
@@ -98,7 +98,7 @@ def update_dependencies(dependency_specifiers):
     return updated_dependency_specifiers
 
 
-def package_base_name(package_name):
+def get_package_base_name(package_name):
     match = re.match(r"^([^\[]+)\[.*\]$", package_name)
     if match:
         return match.group(1).strip()
