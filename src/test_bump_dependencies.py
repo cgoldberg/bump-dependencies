@@ -87,9 +87,9 @@ def complex_specifier(request):
 @pytest.fixture(
     params=[
         "foo@http://foo.com",
-        "foo @ http://foo.com ; python_version=='2.7'",
         "foo @ https://github.com/foo/foo/archive/1.0.0.zip",
         "foo @ file:///builds/foo-1.0.0-py3-none-any.whl`",
+        "foo [bar,baz] @ http://foo.com ; python_version=='3.13'",
     ]
 )
 def direct_reference_specifier(request):
