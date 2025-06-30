@@ -13,6 +13,26 @@
 
 ----
 
+## Installation:
+
+Install from [PyPI][pypi-bump-dependencies]:
+
+```
+pip install bump-dependencies
+```
+----
+
+## Usage:
+
+```
+usage: bump_dependencies [-h] [--dry-run] [--path PATH]
+
+options:
+  -h, --help   show this help message and exit
+  --dry-run    don't write changes to pyproject.toml
+  --path PATH  path to pyproject.toml (defaults to current directory)
+```
+
 ## About:
 
 `bump_dependencies` is a Python CLI program that generates a new packaging
@@ -69,16 +89,18 @@ It will update dependency specifiers listed in various sections of `pyproject.to
   containing comparison operator: `==`, `===`, `~=`, `>`, `>=`
   - example:
     - `foo==1.0.0`
+    - `foo~=1.0`
     - `foo>=1`
 - will not update dependency specifiers with version identifier
   containing comparison operator: `<`, `<=`, `!=`
   - example:
     - `foo<2.0`
     - `foo>=1,<2`
-    - `foo <=2.0, != 1.0.1`
+    - `foo > 1.0, != 1.0.1`
 - will not update unversioned dependency specifiers
   - example:
     - `foo`
+    - `foo[bar]`
 - will not update direct reference dependency specifiers
   - example:
     - `foo @ https://github.com/foo/foo/archive/1.0.0.zip`
@@ -98,24 +120,12 @@ It will update dependency specifiers listed in various sections of `pyproject.to
 - `<=` : inclusive ordered comparison
 - `!=` : version exclusion
 
-----
-
-## Usage:
-
-```
-usage: bump_dependencies [-h] [--dry-run] [--path PATH]
-
-options:
-  -h, --help   show this help message and exit
-  --dry-run    don't write changes to pyproject.toml
-  --path PATH  path to pyproject.toml (defaults to current directory)
-```
 
 [github-home]: https://github.com/cgoldberg
 [github-repo]: https://github.com/cgoldberg/bump-dependencies
+[pypi-home]: https://pypi.org
 [pypi-bump-dependencies]: https://pypi.org/project/bump-dependencies
 [mit-license]: https://raw.githubusercontent.com/cgoldberg/bump-dependencies/refs/heads/master/LICENSE
-[pypi-home]: https://pypi.org
 [pep-440]: https://peps.python.org/pep-0440
 [pep-508]: https://peps.python.org/pep-0508
 [pep-735]: https://peps.python.org/pep-0735
