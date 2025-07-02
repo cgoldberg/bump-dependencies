@@ -24,7 +24,13 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
-dependencies = ["packaging==25.0", "requests==2.32.4", "rich==14.0.0", "tomlkit==0.13.3", "validate-pyproject==0.24.1"]
+dependencies = [
+    "packaging==25.0",
+    "requests==2.32.4",
+    "rich==14.0.0",
+    "tomlkit==0.13.3",
+    "validate-pyproject==0.24.1",
+]
 
 [project.scripts]
 bump_dependencies = "bump_dependencies:main"
@@ -35,10 +41,21 @@ source = "https://github.com/cgoldberg/bump-dependencies"
 download = "https://pypi.org/project/bump-dependencies"
 
 [dependency-groups]
-dev = ["tox"]
-lint = ["black", "ruff"]
-test = ["pytest==8.4.1", "pytest-sugar==1.0.0"]
-validate = ["packaging==25.0", "validate-pyproject==0.24.1"]
+dev = [
+    "tox",
+]
+lint = [
+    "black",
+    "ruff",
+]
+test = [
+    "pytest==8.4.1",
+    "pytest-sugar==1.0.0",
+    ]
+validate = [
+    "packaging==25.0",
+    "validate-pyproject==0.24.1",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}

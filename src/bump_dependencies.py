@@ -50,10 +50,10 @@ def get_dependencies_groups(pyproject_data):
         groups.update({"project": project_dependencies})
     optional_dependencies = dict(pyproject_data["project"].get("optional-dependencies", {}))
     if optional_dependencies:
-        groups.update({"optional_dependencies": optional_dependencies})
+        groups.update({"optional-dependencies": optional_dependencies})
     dependency_groups = dict(pyproject_data.get("dependency-groups", {}))
     if dependency_groups:
-        groups.update({"dependency_groups": dependency_groups})
+        groups.update({"dependency-groups": dependency_groups})
     if not groups:
         raise ValueError("no dependencies found")
     return groups
@@ -142,20 +142,25 @@ def run(pyproject_toml_path, dry_run):
         except ValueError as e:
             exit(e)
 
+        # update 'tomlkit.items` in-place to maintain the formatting from the original toml file
         for key, value in dependencies_groups_map.items():
             if key == "project":
-                pyproject_data["project"]["dependencies"] = update_dependencies(value)
-            if key == "optional_dependencies":
-                pyproject_data["project"]["optional-dependencies"] = {
-                    dependency_group: update_dependencies(dependency_specifiers)
-                    for dependency_group, dependency_specifiers in value.items()
-                }
-            if key == "dependency_groups":
-                pyproject_data["dependency-groups"] = {
-                    dependency_group: update_dependencies(dependency_specifiers)
-                    for dependency_group, dependency_specifiers in value.items()
-                }
-
+                updated_deps = update_dependencies(value)
+                dep_list = pyproject_data["project"]["dependencies"]
+                for i in range(len(dep_list)):
+                    dep_list[i] = updated_deps[i]
+            if key == "optional-dependencies":
+                dep_groups = pyproject_data["project"][key]
+                for dep_group, dep_list in dep_groups.items():
+                    updated_deps = update_dependencies(dep_list)
+                    for i in range(len(dep_list)):
+                        dep_list[i] = updated_deps[i]
+            if key == "dependency-groups":
+                dep_groups = pyproject_data[key]
+                for dep_group, dep_list in dep_groups.items():
+                    updated_deps = update_dependencies(dep_list)
+                    for i in range(len(dep_list)):
+                        dep_list[i] = updated_deps[i]
         if dry_run:
             print("\nnot writing new pyproject.toml with updated dependencies")
         else:
