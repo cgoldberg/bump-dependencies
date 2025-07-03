@@ -120,28 +120,31 @@ def fetch_latest_package_version(package_name):
     return response.json()["info"]["version"]
 
 
-def run(pyproject_toml_path, dry_run):
+def load(pyproject_toml_path):
+    print(f"loading: {pyproject_toml_path}")
+    try:
+        with open(pyproject_toml_path) as f:
+            pyproject_data = tomlkit.load(f)
+    except FileNotFoundError:
+        exit("\nno pyproject.toml found")
+    except Exception as e:
+        exit(f"\ninvalid pyproject.toml: {e}")
+    print(f"validating: {os.path.basename(pyproject_toml_path)}\n")
+    validator = validate_pyproject_api.Validator()
+    try:
+        validator(pyproject_data)
+    except ValidationError as e:
+        exit(f"invalid pyproject.toml: {e.message}")
+    return pyproject_data
+
+
+def run(pyproject_data, pyproject_toml_path=os.getcwd(), dry_run=True):
     console = Console()
     with console.status(""):
-        print(f"loading: {pyproject_toml_path}")
-        try:
-            with open(pyproject_toml_path) as f:
-                pyproject_data = tomlkit.load(f)
-        except FileNotFoundError:
-            exit("\nno pyproject.toml found")
-        except Exception as e:
-            exit(f"\ninvalid pyproject.toml: {e}")
-        print(f"validating: {os.path.basename(pyproject_toml_path)}\n")
-        validator = validate_pyproject_api.Validator()
-        try:
-            validator(pyproject_data)
-        except ValidationError as e:
-            exit(f"invalid pyproject.toml: {e.message}")
         try:
             dependencies_groups_map = get_dependencies_groups(pyproject_data)
         except ValueError as e:
             exit(e)
-
         # update 'tomlkit.items` in-place to maintain the formatting from the original toml file
         for key, value in dependencies_groups_map.items():
             if key == "project":
@@ -167,6 +170,7 @@ def run(pyproject_toml_path, dry_run):
             with open(pyproject_toml_path, "w") as f:
                 tomlkit.dump(pyproject_data, f)
             print("\ngenerated new pyproject.toml with updated dependencies")
+        return pyproject_data
 
 
 def main():
@@ -184,7 +188,8 @@ def main():
         help="path to pyproject.toml (defaults to current directory)",
     )
     args = parser.parse_args()
-    run(args.path, args.dry_run)
+    data = load(args.path)
+    run(data, pyproject_toml_path=args.path, dry_run=args.dry_run)
 
 
 if __name__ == "__main__":

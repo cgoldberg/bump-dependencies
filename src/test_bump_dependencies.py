@@ -3,7 +3,10 @@
 
 """Tests for bump_dependencies"""
 
+import re
+
 import pytest
+import tomlkit
 
 import bump_dependencies as bd
 
@@ -169,3 +172,61 @@ def test_fetch_unavailable_package_version():
 def test_package_base_name(package_name):
     base_name = bd.get_package_base_name(package_name)
     assert base_name == "foo"
+
+
+def test_dry_run():
+    data = (
+        r"""
+        [project]
+        name = "foo"
+        requires-python = ">=3.9"
+        dependencies = [
+            "requests==2.32.1",
+            "numpy>=1.26.4",
+            "pandas~=1.4",
+        ]
+        [project.optional-dependencies]
+        socks = [
+            "pysocks>=1.5.6",
+            "httpbin~=0.9.0",
+        ]
+        [dependency-groups]
+        dev = [
+            "wheel",
+            "build>=1.1.2.post1",
+        ]
+        test = [
+            "pytest>=4",
+            "pytest-timeout>2.2",
+        ]
+        """
+    )
+    pattern = (
+        r"""
+        \[project\]
+        name = "foo"
+        requires-python = ">=3.9"
+        dependencies = \[
+            "requests==(.+)",
+            "numpy>=(.+)",
+            "pandas~=(.+)",
+        \]
+        \[project.optional-dependencies\]
+        socks = \[
+            "pysocks>=(.+)",
+            "httpbin~=(.+)",
+        \]
+        \[dependency-groups\]
+        dev = \[
+            "wheel",
+            "build>=(.+)",
+        \]
+        test = \[
+            "pytest>=(.+)",
+            "pytest-timeout>(.+)",
+        \]
+        """
+    )
+    updated_data = bd.run(tomlkit.loads(data))
+    assert isinstance(updated_data, tomlkit.toml_document.TOMLDocument)
+    assert re.match(pattern, tomlkit.dumps(updated_data))
