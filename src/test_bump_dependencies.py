@@ -175,8 +175,7 @@ def test_package_base_name(package_name):
 
 
 def test_dry_run():
-    data = (
-        r"""
+    data = r"""
         [project]
         name = "foo"
         requires-python = ">=3.9"
@@ -200,9 +199,7 @@ def test_dry_run():
             "pytest-timeout>2.2",
         ]
         """
-    )
-    pattern = (
-        r"""
+    pattern = r"""
         \[project\]
         name = "foo"
         requires-python = ">=3.9"
@@ -226,7 +223,6 @@ def test_dry_run():
             "pytest-timeout>(.+)",
         \]
         """
-    )
     updated_data = bd.run(tomlkit.loads(data))
     assert isinstance(updated_data, tomlkit.toml_document.TOMLDocument)
     assert re.match(pattern, tomlkit.dumps(updated_data))
