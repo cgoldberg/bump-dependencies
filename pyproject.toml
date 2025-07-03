@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bump-dependencies"
-version = "0.1.1dev0"
+version = "0.1.1"
 description = "Bump Python package dependencies in pyproject.toml"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -51,7 +51,7 @@ lint = [
 test = [
     "pytest==8.4.1",
     "pytest-sugar==1.0.0",
-    ]
+]
 validate = [
     "packaging==25.0",
     "validate-pyproject==0.24.1",
