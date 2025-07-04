@@ -125,7 +125,7 @@ It will update dependency specifiers listed in various sections of `pyproject.to
 [github-repo]: https://github.com/cgoldberg/bump-dependencies
 [pypi-home]: https://pypi.org
 [pypi-bump-dependencies]: https://pypi.org/project/bump-dependencies
-[mit-license]: https://raw.githubusercontent.com/cgoldberg/bump-dependencies/refs/heads/master/LICENSE
+[mit-license]: https://raw.githubusercontent.com/cgoldberg/bump-dependencies/refs/heads/main/LICENSE
 [pep-440]: https://peps.python.org/pep-0440
 [pep-508]: https://peps.python.org/pep-0508
 [pep-735]: https://peps.python.org/pep-0735
