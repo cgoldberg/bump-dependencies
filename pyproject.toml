@@ -49,8 +49,7 @@ lint = [
     "ruff",
 ]
 test = [
-    "pytest==8.4.1",
-    "pytest-sugar==1.0.0",
+    "pytest",
 ]
 validate = [
     "packaging==25.0",
