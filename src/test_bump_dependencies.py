@@ -62,7 +62,7 @@ def unsupported_specifier(request):
 
 @pytest.fixture(
     params=[
-        "foo==1.0>2<1"
+        "foo==1.0>2<1",
         "foo==1!1.0foo>=1,<2foo >= 1.0.1, <= 2.0.*",
         "foo~=1.0.0!=1.0.1,foo ~=1.0.0, != 1.0.1foo>=1.0,<2.0,!=1.5.7",
     ]
