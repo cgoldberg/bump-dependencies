@@ -27,6 +27,7 @@ classifiers = [
 dependencies = [
     "packaging==25.0",
     "requests==2.32.4",
+    "requirements-parser==0.13.0",
     "rich==14.0.0",
     "tomlkit==0.13.3",
     "validate-pyproject==0.24.1",

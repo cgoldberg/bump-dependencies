@@ -42,7 +42,7 @@ import bump_dependencies as bd
         ("foo == 1.0; os_name=='a' or os_name=='b'", "foo"),
     ]
 )
-def valid_specifier_name(request):
+def valid_specifier(request):
     return request.param
 
 
@@ -52,13 +52,22 @@ def valid_specifier_name(request):
         "foo<=1.0",
         " foo <= 1.0.0 ",
         "foo!=1.0",
-        "foo==1!1.0foo>=1,<2foo >= 1.0.1, <= 2.0.*",
         "foo>1.0.0,<2.0.0",
         "foo <=2.0, != 1.0.1",
-        "foo~=1.0.0,!=1.0.1foo ~=1.0.0, != 1.0.1foo>=1.0,<2.0,!=1.5.7",
     ]
 )
 def unsupported_specifier(request):
+    return request.param
+
+
+@pytest.fixture(
+    params=[
+        "foo==1.0>2<1"
+        "foo==1!1.0foo>=1,<2foo >= 1.0.1, <= 2.0.*",
+        "foo~=1.0.0!=1.0.1,foo ~=1.0.0, != 1.0.1foo>=1.0,<2.0,!=1.5.7",
+    ]
+)
+def invalid_specifier(request):
     return request.param
 
 
@@ -118,8 +127,8 @@ def package_name(request):
     return request.param
 
 
-def test_name_and_operator(valid_specifier_name):
-    dependency_specifier, name = valid_specifier_name
+def test_name_and_operator(valid_specifier):
+    dependency_specifier, name = valid_specifier
     valid_operators = ("===", "==", "~=", ">=", ">")
     dependency_name, operator = bd.get_dependency_name_and_operator(dependency_specifier)
     assert isinstance(operator, str)
@@ -129,27 +138,32 @@ def test_name_and_operator(valid_specifier_name):
 
 
 def test_name_and_operator_with_unsupported_operator(unsupported_specifier):
-    with pytest.raises(ValueError, match="skipping unsupported '.*' version identifier"):
+    with pytest.raises(ValueError, match="skipping unsupported version identifier: '.*'"):
         bd.get_dependency_name_and_operator(unsupported_specifier)
 
 
+def test_name_and_operator_with_invalid_specifier(invalid_specifier):
+    with pytest.raises(ValueError, match="skipping invalid dependency specifier: '.*'"):
+        bd.get_dependency_name_and_operator(invalid_specifier)
+
+
 def test_name_and_operator_with_unversioned_specifier(unversioned_specifier):
-    with pytest.raises(ValueError, match="no version specified"):
+    with pytest.raises(ValueError, match="no version specified: '.*'"):
         bd.get_dependency_name_and_operator(unversioned_specifier)
 
 
 def test_name_and_operator_with_complex_specifier(complex_specifier):
-    with pytest.raises(ValueError, match="can't handle complex dependency specifiers"):
+    with pytest.raises(ValueError, match="can't handle complex dependency specifier: '.*'"):
         bd.get_dependency_name_and_operator(complex_specifier)
 
 
 def test_name_and_operator_with_direct_reference_specifier(direct_reference_specifier):
-    with pytest.raises(ValueError, match="can't handle direct reference dependency specifiers"):
+    with pytest.raises(ValueError, match="can't handle direct reference dependency specifier: '.*'"):
         bd.get_dependency_name_and_operator(direct_reference_specifier)
 
 
-def test_update_dependency(valid_specifier_name):
-    dependency_specifier, name = valid_specifier_name
+def test_update_dependency(valid_specifier):
+    dependency_specifier, name = valid_specifier
     dependency_name, operator = bd.get_dependency_name_and_operator(dependency_specifier)
     updated_dependency_specifier = bd.update_dependency(dependency_specifier)
     assert isinstance(updated_dependency_specifier, str)

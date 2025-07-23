@@ -9,7 +9,9 @@ import os
 import re
 
 import requests
+import requirements
 import tomlkit
+from packaging.requirements import InvalidRequirement
 from rich.console import Console
 from validate_pyproject import api as validate_pyproject_api
 from validate_pyproject.errors import ValidationError
@@ -18,19 +20,23 @@ from validate_pyproject.errors import ValidationError
 def get_dependency_name_and_operator(dependency_specifier):
     illegal_chars = ("/", ":", "@")
     if any(char in dependency_specifier for char in illegal_chars):
-        raise ValueError("can't handle direct reference dependency specifiers")
+        raise ValueError(f"can't handle direct reference dependency specifier: '{dependency_specifier}'")
+    try:
+        list(requirements.parse(dependency_specifier))
+    except InvalidRequirement:
+        raise ValueError(f"skipping invalid dependency specifier: '{dependency_specifier}'")
     if ";" in dependency_specifier:
         dependency_specifier = dependency_specifier.split(";")[0]
     invalid_operators = ("!=", "<=", "<")
     for op in invalid_operators:
         if op in dependency_specifier:
-            raise ValueError(f"skipping unsupported '{op}' version identifier")
+            raise ValueError(f"skipping unsupported version identifier: '{op}'")
     valid_operators = ("===", "==", "~=", ">=", ">")
     operators = re.findall("|".join(valid_operators), dependency_specifier)
     if not operators:
-        raise ValueError("no version specified")
+        raise ValueError(f"no version specified: '{dependency_specifier}'")
     elif len(operators) != 1:
-        raise ValueError("can't handle complex dependency specifiers")
+        raise ValueError(f"can't handle complex dependency specifier: '{dependency_specifier}'")
     operator = operators[0]
     dependency_name = dependency_specifier.replace(" ", "").split(operator)[0].strip()
     return dependency_name, operator
