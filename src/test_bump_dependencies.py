@@ -138,33 +138,33 @@ def test_name_and_operator(valid_specifier):
 
 
 def test_name_and_operator_with_unsupported_operator(unsupported_specifier):
-    with pytest.raises(ValueError, match="skipping unsupported version identifier: '.*'"):
+    with pytest.raises(ValueError, match=r"skipping unsupported version identifier: '.*'"):
         bd.get_dependency_name_and_operator(unsupported_specifier)
 
 
 def test_name_and_operator_with_invalid_specifier(invalid_specifier):
-    with pytest.raises(ValueError, match="skipping invalid dependency specifier: '.*'"):
+    with pytest.raises(ValueError, match=r"skipping invalid dependency specifier: '.*'"):
         bd.get_dependency_name_and_operator(invalid_specifier)
 
 
 def test_name_and_operator_with_unversioned_specifier(unversioned_specifier):
-    with pytest.raises(ValueError, match="no version specified: '.*'"):
+    with pytest.raises(ValueError, match=r"no version specified: '.*'"):
         bd.get_dependency_name_and_operator(unversioned_specifier)
 
 
 def test_name_and_operator_with_complex_specifier(complex_specifier):
-    with pytest.raises(ValueError, match="can't handle complex dependency specifier: '.*'"):
+    with pytest.raises(ValueError, match=r"can't handle complex dependency specifier: '.*'"):
         bd.get_dependency_name_and_operator(complex_specifier)
 
 
 def test_name_and_operator_with_direct_reference_specifier(direct_reference_specifier):
-    with pytest.raises(ValueError, match="can't handle direct reference dependency specifier: '.*'"):
+    with pytest.raises(ValueError, match=r"can't handle direct reference dependency specifier: '.*'"):
         bd.get_dependency_name_and_operator(direct_reference_specifier)
 
 
 def test_update_dependency(valid_specifier):
     dependency_specifier, name = valid_specifier
-    dependency_name, operator = bd.get_dependency_name_and_operator(dependency_specifier)
+    _, operator = bd.get_dependency_name_and_operator(dependency_specifier)
     updated_dependency_specifier = bd.update_dependency(dependency_specifier)
     assert isinstance(updated_dependency_specifier, str)
     assert operator in updated_dependency_specifier
