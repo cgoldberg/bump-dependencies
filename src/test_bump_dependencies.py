@@ -1,7 +1,7 @@
 # Corey Goldberg, 2025
 # License: MIT
 
-"""Tests for bump_dependencies"""
+"""Tests for bump_dependencies."""
 
 import re
 

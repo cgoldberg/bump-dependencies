@@ -2,7 +2,7 @@
 # Corey Goldberg, 2025
 # License: MIT
 
-"""Bump Python package dependencies in pyproject.toml"""
+"""Bump Python package dependencies in pyproject.toml."""
 
 import argparse
 import os
@@ -43,7 +43,7 @@ def get_dependency_name_and_operator(dependency_specifier):
 
 
 def get_dependencies_groups(pyproject_data):
-    """Map each dependency group name to a list of dependency specifiers
+    """Map each dependency group name to a list of dependency specifiers.
 
     This includes:
         - `dependencies` list from `[project]` section
