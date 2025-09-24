@@ -13,26 +13,6 @@
 
 ----
 
-## Installation:
-
-Install from [PyPI][pypi-bump-dependencies]:
-
-```
-pip install bump-dependencies
-```
-----
-
-## Usage:
-
-```
-usage: bump_dependencies [-h] [--dry-run] [--path PATH]
-
-options:
-  -h, --help   show this help message and exit
-  --dry-run    don't write changes to pyproject.toml
-  --path PATH  path to pyproject.toml (defaults to current directory)
-```
-
 ## About:
 
 `bump_dependencies` is a Python CLI program that generates a new packaging
@@ -43,7 +23,50 @@ configuration file (`pyproject.toml`) file with updated package dependencies.
 - for more information on dependency specifiers, see [PEP 508][pep-508] and the [PyPA Dependency Specifiers Spec][pypa-dependency-specifiers]
 - for more information on dependency groups, see [PEP 735][pep-735] and the [PyPA Dependency Groups Spec][pypa-dependency-groups]
 
-#### Example:
+## Requirements:
+
+- Python 3.9+
+
+## Installation:
+
+Install from [PyPI][pypi-bump-dependencies]:
+
+```
+pip install bump-dependencies
+```
+
+## CLI Options:
+
+```
+usage: bump_dependencies [-h] [--dry-run] [--path PATH]
+
+options:
+  -h, --help   show this help message and exit
+  --dry-run    don't write changes to pyproject.toml
+  --path PATH  path to pyproject.toml (defaults to current directory)
+```
+
+## Usage:
+
+#### Install from PyPI with pipx, Run:
+
+```
+pipx install bump-dependencies
+bump_dependencies
+```
+
+#### Clone Repo, Create/Activate Virtual Environment, Install from Source, Run:
+
+```
+git clone git@github.com:cgoldberg/bump-dependencies.git
+cd ./bump-dependencies
+python3 -m venv venv
+source venv/bin/activate
+pip install .
+bump_dependencies
+```
+
+## Example:
 
 If your `pyproject.toml` contains this:
 
@@ -119,7 +142,6 @@ It will update dependency specifiers listed in various sections of `pyproject.to
 - `<` : exclusive ordered comparison
 - `<=` : inclusive ordered comparison
 - `!=` : version exclusion
-
 
 [github-home]: https://github.com/cgoldberg
 [github-repo]: https://github.com/cgoldberg/bump-dependencies
