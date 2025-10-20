@@ -1,6 +1,6 @@
 # bump-dependencies
 
-## Python - bump your package dependencies
+### Bump your Python package dependencies
 
 *Update dependency specifiers in `pyproject.toml` to latest versions*
 
