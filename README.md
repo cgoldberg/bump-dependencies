@@ -6,6 +6,8 @@
 
 ---
 
+[![Supported Python Versions](https://img.shields.io/pypi/pyversions/bump-dependencies)](https://pypi.org/project/bump-dependencies)
+
 - Copyright (c) 2025 [Corey Goldberg][github-home]
 - Development: [GitHub][github-repo]
 - Download/Install: [PyPI][pypi-bump-dependencies]
