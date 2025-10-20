@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bump-dependencies"
-version = "0.1.2dev0"
+version = "0.1.2"
 description = "Bump Python package dependencies in pyproject.toml"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -18,17 +18,17 @@ classifiers = [
     "Intended Audience :: Developers",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
     "packaging==25.0",
     "requests==2.32.5",
     "requirements-parser==0.13.0",
-    "rich==14.1.0",
+    "rich==14.2.0",
     "tomlkit==0.13.3",
     "validate-pyproject==0.24.1",
 ]
