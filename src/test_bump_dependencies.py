@@ -1,4 +1,4 @@
-# Corey Goldberg, 2025
+# Copyright (c) 2025-2026 Corey Goldberg
 # License: MIT
 
 """Tests for bump_dependencies."""

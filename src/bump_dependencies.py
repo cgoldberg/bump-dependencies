@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# Corey Goldberg, 2025
+# Copyright (c) 2025-2026 Corey Goldberg
 # License: MIT
 
 """Bump Python package dependencies in pyproject.toml."""
@@ -196,7 +195,3 @@ def main():
     args = parser.parse_args()
     data = load(args.path)
     run(data, pyproject_toml_path=args.path, dry_run=args.dry_run)
-
-
-if __name__ == "__main__":
-    main()
