@@ -28,9 +28,9 @@ dependencies = [
     "packaging==26.0",
     "requests==2.32.5",
     "requirements-parser==0.13.0",
-    "rich==14.3.1",
+    "rich==14.3.2",
     "tomlkit==0.14.0",
-    "validate-pyproject==0.24.1",
+    "validate-pyproject==0.25",
 ]
 
 [project.scripts]
@@ -55,7 +55,7 @@ test = [
 ]
 validate = [
     "packaging==26.0",
-    "validate-pyproject==0.24.1",
+    "validate-pyproject==0.25",
 ]
 
 [tool.setuptools]
