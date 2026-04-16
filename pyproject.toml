@@ -25,10 +25,10 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "packaging==26.0",
+    "packaging==26.1",
     "requests==2.33.1",
     "requirements-parser==0.13.0",
-    "rich==14.3.3",
+    "rich==15.0.0",
     "tomlkit==0.14.0",
     "validate-pyproject==0.25",
 ]
@@ -54,7 +54,7 @@ test = [
     "pytest",
 ]
 validate = [
-    "packaging==26.0",
+    "packaging==26.1",
     "validate-pyproject==0.25",
 ]
 
