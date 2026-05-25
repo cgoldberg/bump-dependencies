@@ -19,13 +19,11 @@ from validate_pyproject import api as validate_pyproject_api
 from validate_pyproject.errors import ValidationError
 
 
-class Updater():
-
+class Updater:
     def __init__(self, pyproject_toml_path, force_latest=False):
         self.pyproject_toml_path = pyproject_toml_path
         self.force_latest = force_latest
         self.pyproject_data = self.load(pyproject_toml_path)
-
 
     def get_dependency_name_and_operator(self, dependency_specifier):
         illegal_chars = ("/", ":", "@")
@@ -51,7 +49,6 @@ class Updater():
         dependency_name = dependency_specifier.replace(" ", "").split(operator)[0].strip()
         return dependency_name, operator
 
-
     def get_dependencies_groups(self):
         """Map each dependency group name to a list of dependency specifiers.
 
@@ -75,7 +72,6 @@ class Updater():
             raise ValueError("no dependencies found")
         return groups
 
-
     def update_dependency(self, dependency_specifier):
         dependency_name, operator = self.get_dependency_name_and_operator(dependency_specifier)
         new_dependency_version = self.fetch_new_package_version(self.get_package_base_name(dependency_name))
@@ -87,7 +83,6 @@ class Updater():
             else:
                 updated_dependency_specifier = f"{dependency_name}{operator}{new_dependency_version}"
         return updated_dependency_specifier
-
 
     def update_dependencies(self, dependency_specifiers):
         updated_dependency_specifiers = []
@@ -115,13 +110,11 @@ class Updater():
                 updated_dependency_specifiers.append(dependency_specifier)
         return updated_dependency_specifiers
 
-
     def get_package_base_name(self, package_name):
         match = re.match(r"^(.*?)\[", package_name)
         if match:
             return match.group(1).strip()
         return package_name.strip()
-
 
     def fetch_new_package_version(self, package_name):
         url = f"https://pypi.org/pypi/{package_name}/json"
@@ -165,7 +158,6 @@ class Updater():
                         latest = ver
             return str(latest) if latest else None
 
-
     def load(self, pyproject_toml_path):
         print(f"loading: {pyproject_toml_path}")
         try:
@@ -182,7 +174,6 @@ class Updater():
         except ValidationError as e:
             exit(f"invalid pyproject.toml: {e.message}")
         return pyproject_data
-
 
     def run(self):
         try:
