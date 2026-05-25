@@ -1,7 +1,7 @@
 # Copyright (c) 2025-2026 Corey Goldberg
 # License: MIT
 
-"""Tests for bump_dependencies."""
+"""Tests for bump_dependencies module."""
 
 import re
 
