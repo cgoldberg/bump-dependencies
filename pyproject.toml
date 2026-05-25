@@ -26,10 +26,10 @@ classifiers = [
 ]
 dependencies = [
     "packaging==26.2",
-    "requests==2.33.1",
+    "requests==2.34.2",
     "requirements-parser==0.13.0",
     "rich==15.0.0",
-    "tomlkit==0.14.0",
+    "tomlkit==0.15.0",
     "validate-pyproject==0.25",
 ]
 
@@ -46,7 +46,6 @@ dev = [
     "tox",
 ]
 lint = [
-    "black",
     "refurb",
     "ruff",
 ]

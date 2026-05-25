@@ -6,11 +6,14 @@
 import argparse
 import os
 import re
+import sys
 
 import requests
 import requirements
 import tomlkit
 from packaging.requirements import InvalidRequirement
+from packaging.specifiers import SpecifierSet
+from packaging.version import InvalidVersion, Version
 from rich.console import Console
 from validate_pyproject import api as validate_pyproject_api
 from validate_pyproject.errors import ValidationError
@@ -64,9 +67,9 @@ def get_dependencies_groups(pyproject_data):
     return groups
 
 
-def update_dependency(dependency_specifier):
+def update_dependency(dependency_specifier, force_latest):
     dependency_name, operator = get_dependency_name_and_operator(dependency_specifier)
-    new_dependency_version = fetch_latest_package_version(get_package_base_name(dependency_name))
+    new_dependency_version = fetch_new_package_version(get_package_base_name(dependency_name), force_latest)
     updated_dependency_specifier = None
     if new_dependency_version is not None:
         if ";" in dependency_specifier:
@@ -77,7 +80,7 @@ def update_dependency(dependency_specifier):
     return updated_dependency_specifier
 
 
-def update_dependencies(dependency_specifiers):
+def update_dependencies(dependency_specifiers, force_latest):
     updated_dependency_specifiers = []
     for dependency_specifier in dependency_specifiers:
         if isinstance(dependency_specifier, tomlkit.items.InlineTable):
@@ -90,7 +93,7 @@ def update_dependencies(dependency_specifiers):
             print(f"- not updating: '{dependency_specifier}' ({e})")
             updated_dependency_specifiers.append(dependency_specifier)
             continue
-        updated_dependency_specifier = update_dependency(dependency_specifier)
+        updated_dependency_specifier = update_dependency(dependency_specifier, force_latest)
         if updated_dependency_specifier is not None:
             if dependency_specifier != updated_dependency_specifier:
                 print(f"- updating: '{dependency_specifier}' to '{updated_dependency_specifier}'")
@@ -111,18 +114,47 @@ def get_package_base_name(package_name):
     return package_name.strip()
 
 
-def fetch_latest_package_version(package_name):
+def fetch_new_package_version(package_name, force_latest):
     url = f"https://pypi.org/pypi/{package_name}/json"
     try:
-        response = requests.get(url)
-    except requests.exceptions.ConnectionError:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+    except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError):
         print("error connecting to pypi.org")
         return None
-    try:
-        response.raise_for_status()  # raise an exception for bad status codes
-    except requests.exceptions.HTTPError:
-        return None
-    return response.json()["info"]["version"]
+    data = response.json()
+    if force_latest:
+        return response.json()["info"]["version"]
+    else:
+        current_py = f"{sys.version_info.major}.{sys.version_info.minor}"
+        latest = None
+        for version_str, files in data.get("releases", {}).items():
+            try:
+                ver = Version(version_str)
+            except InvalidVersion:
+                continue
+            # skip pre-releases
+            if ver.is_prerelease:
+                continue
+            # check Requires-Python across release files
+            compatible = False
+            for f in files:
+                requires_python = f.get("requires_python")
+                if not requires_python:
+                    compatible = True  # no constraint, assume compatible
+                    continue
+                try:
+                    if SpecifierSet(requires_python).contains(current_py):
+                        compatible = True
+                    else:
+                        compatible = False
+                        break
+                except Exception:
+                    continue
+            if compatible:
+                if latest is None or ver > latest:
+                    latest = ver
+        return str(latest) if latest else None
 
 
 def load(pyproject_toml_path):
@@ -143,7 +175,7 @@ def load(pyproject_toml_path):
     return pyproject_data
 
 
-def run(pyproject_data, pyproject_toml_path=os.getcwd(), dry_run=True):
+def run(pyproject_data, pyproject_toml_path=os.getcwd(), force_latest=False, dry_run=True):
     console = Console()
     with console.status(""):
         try:
@@ -153,20 +185,20 @@ def run(pyproject_data, pyproject_toml_path=os.getcwd(), dry_run=True):
         # update 'tomlkit.items` in-place to maintain the formatting from the original toml file
         for key, value in dependencies_groups_map.items():
             if key == "project":
-                updated_deps = update_dependencies(value)
+                updated_deps = update_dependencies(value, force_latest)
                 dep_list = pyproject_data["project"]["dependencies"]
                 for i in range(len(dep_list)):
                     dep_list[i] = updated_deps[i]
             if key == "optional-dependencies":
                 dep_groups = pyproject_data["project"][key]
                 for dep_group, dep_list in dep_groups.items():
-                    updated_deps = update_dependencies(dep_list)
+                    updated_deps = update_dependencies(dep_list, force_latest)
                     for i in range(len(dep_list)):
                         dep_list[i] = updated_deps[i]
             if key == "dependency-groups":
                 dep_groups = pyproject_data[key]
                 for dep_group, dep_list in dep_groups.items():
-                    updated_deps = update_dependencies(dep_list)
+                    updated_deps = update_dependencies(dep_list, force_latest)
                     for i in range(len(dep_list)):
                         dep_list[i] = updated_deps[i]
         if dry_run:
@@ -183,9 +215,13 @@ def main():
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        default=False,
         dest="dry_run",
         help="don't write changes to pyproject.toml",
+    )
+    parser.add_argument(
+        "--latest",
+        action="store_true",
+        help="always use latest available package versions",
     )
     parser.add_argument(
         "--path",
@@ -194,4 +230,4 @@ def main():
     )
     args = parser.parse_args()
     data = load(args.path)
-    run(data, pyproject_toml_path=args.path, dry_run=args.dry_run)
+    run(data, pyproject_toml_path=args.path, force_latest=args.latest, dry_run=args.dry_run)
