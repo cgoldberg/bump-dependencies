@@ -63,16 +63,10 @@ package-dir = {"" = "src"}
 [tool.pytest.ini_options]
 addopts = "-vv" # extra verbose
 
-[tool.black]
-line-length = 120
-target-version = [
-    "py39", "py310", "py311", "py312", "py313"
-]
-
 [tool.ruff]
 line-length = 120
 respect-gitignore = true
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [
@@ -88,9 +82,3 @@ fixable = ["ALL"]
 docstring-code-format = true
 docstring-code-line-length = 120
 
-[tool.refurb]
-python_version = "3.9"
-enable_all = true
-disable = [
-    "FURB104", "FURB107", "FURB147", "FURB173", "FURB183", "FURB184"
-]

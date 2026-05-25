@@ -20,10 +20,12 @@ from validate_pyproject.errors import ValidationError
 
 
 class Updater:
-    def __init__(self, pyproject_toml_path, force_latest=False):
+    def __init__(self, pyproject_toml_path=None):
         self.pyproject_toml_path = pyproject_toml_path
-        self.force_latest = force_latest
-        self.pyproject_data = self.load(pyproject_toml_path)
+        self.pyproject_data = self.load() if pyproject_toml_path is not None else None
+        self._dry_run = True
+        self._force_latest = False
+        self._py_version = f"{sys.version_info.major}.{sys.version_info.minor}"
 
     def get_dependency_name_and_operator(self, dependency_specifier):
         illegal_chars = ("/", ":", "@")
@@ -74,7 +76,9 @@ class Updater:
 
     def update_dependency(self, dependency_specifier):
         dependency_name, operator = self.get_dependency_name_and_operator(dependency_specifier)
-        new_dependency_version = self.fetch_new_package_version(self.get_package_base_name(dependency_name))
+        new_dependency_version = self.fetch_new_package_version(
+            self.get_package_base_name(dependency_name), self._force_latest
+        )
         updated_dependency_specifier = None
         if new_dependency_version is not None:
             if ";" in dependency_specifier:
@@ -116,7 +120,7 @@ class Updater:
             return match.group(1).strip()
         return package_name.strip()
 
-    def fetch_new_package_version(self, package_name):
+    def fetch_new_package_version(self, package_name, force_latest=False):
         url = f"https://pypi.org/pypi/{package_name}/json"
         try:
             response = requests.get(url, timeout=10)
@@ -125,10 +129,9 @@ class Updater:
             print("error connecting to pypi.org")
             return None
         data = response.json()
-        if self.force_latest:
+        if force_latest:
             return response.json()["info"]["version"]
         else:
-            current_py = f"{sys.version_info.major}.{sys.version_info.minor}"
             latest = None
             for version_str, files in data.get("releases", {}).items():
                 try:
@@ -146,7 +149,7 @@ class Updater:
                         compatible = True  # no constraint, assume compatible
                         continue
                     try:
-                        if SpecifierSet(requires_python).contains(current_py):
+                        if SpecifierSet(requires_python).contains(self._py_version):
                             compatible = True
                         else:
                             compatible = False
@@ -158,16 +161,16 @@ class Updater:
                         latest = ver
             return str(latest) if latest else None
 
-    def load(self, pyproject_toml_path):
-        print(f"loading: {pyproject_toml_path}")
+    def load(self):
+        print(f"loading: {self.pyproject_toml_path}")
         try:
-            with open(pyproject_toml_path) as f:
+            with open(self.pyproject_toml_path) as f:
                 pyproject_data = tomlkit.load(f)
         except FileNotFoundError:
             exit("\nno pyproject.toml found")
         except Exception as e:
             exit(f"\ninvalid pyproject.toml: {e}")
-        print(f"validating: {os.path.basename(pyproject_toml_path)}\n")
+        print(f"validating: {os.path.basename(self.pyproject_toml_path)}\n")
         validator = validate_pyproject_api.Validator()
         try:
             validator(pyproject_data)
@@ -175,7 +178,10 @@ class Updater:
             exit(f"invalid pyproject.toml: {e.message}")
         return pyproject_data
 
-    def run(self):
+    def update(self, py_version=None, force_latest=False, dry_run=False):
+        self._dry_run = dry_run
+        self._force_latest = force_latest
+        self._py_version = py_version or self._py_version
         try:
             dependencies_groups_map = self.get_dependencies_groups()
         except ValueError as e:
@@ -199,20 +205,20 @@ class Updater:
                     updated_deps = self.update_dependencies(dep_list)
                     for i in range(len(dep_list)):
                         dep_list[i] = updated_deps[i]
-        return self.pyproject_data
-
-
-def run(pyproject_toml_path, force_latest, dry_run):
-    console = Console()
-    with console.status(""):
-        updater = Updater(pyproject_toml_path, force_latest)
-        pyproject_data = updater.run()
         if dry_run:
             print("\nnot writing new pyproject.toml with updated dependencies")
         else:
-            with open(pyproject_toml_path, "w") as f:
-                tomlkit.dump(pyproject_data, f)
+            with open(self.pyproject_toml_path, "w") as f:
+                tomlkit.dump(self.pyproject_data, f)
             print("\ngenerated new pyproject.toml with updated dependencies")
+        return self.pyproject_data
+
+
+def run(pyproject_toml_path, py_version, force_latest, dry_run):
+    updater = Updater(pyproject_toml_path)
+    console = Console()
+    with console.status(""):
+        pyproject_data = updater.update(py_version=py_version, force_latest=force_latest, dry_run=dry_run)
         return pyproject_data
 
 
@@ -241,4 +247,4 @@ def main():
         help="python version for package compatibility",
     )
     args = parser.parse_args()
-    run(pyproject_toml_path=args.path, force_latest=args.latest, dry_run=args.dry_run)
+    run(pyproject_toml_path=args.path, dry_run=args.dry_run, py_version=args.py_version, force_latest=args.latest)
