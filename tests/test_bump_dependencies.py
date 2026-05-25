@@ -133,6 +133,7 @@ def test_name_and_operator(valid_specifier):
     dependency_name, operator = bd.Updater().get_dependency_name_and_operator(dependency_specifier)
     assert isinstance(operator, str)
     assert operator in valid_operators
+    assert operator in dependency_specifier
     assert isinstance(dependency_name, str)
     assert dependency_name == name
 
@@ -162,24 +163,30 @@ def test_name_and_operator_with_direct_reference_specifier(direct_reference_spec
         bd.Updater().get_dependency_name_and_operator(direct_reference_specifier)
 
 
-def test_get_dependency_name_and_operator(valid_specifier):
-    dependency_specifier, expected_name = valid_specifier
+def test_fetch_resolved_package_version():
     updater = bd.Updater()
-    dependency_name, operator = updater.get_dependency_name_and_operator(dependency_specifier)
-    assert isinstance(dependency_name, str)
-    assert isinstance(operator, str)
-    assert operator in dependency_specifier
-    assert dependency_name == expected_name
+    version = updater.fetch_new_package_version("requests")
+    assert isinstance(version, str)
+    assert version[0].isdigit()
 
 
 def test_fetch_latest_package_version():
-    version = bd.Updater().fetch_new_package_version("requests")
+    updater = bd.Updater()
+    version = updater.fetch_new_package_version("requests", force_latest=True)
+    assert isinstance(version, str)
+    assert version[0].isdigit()
+
+
+def test_fetch_compatible_package_version():
+    updater = bd.Updater()
+    version = updater.fetch_new_package_version("requests", py_version="3.12")
     assert isinstance(version, str)
     assert version[0].isdigit()
 
 
 def test_fetch_unavailable_package_version():
-    version = bd.Updater().fetch_new_package_version("definitely-not-a-package-found-on-pypi-1234")
+    updater = bd.Updater()
+    version = updater.fetch_new_package_version("definitely-not-a-package-found-on-pypi-1234")
     assert version is None
 
 

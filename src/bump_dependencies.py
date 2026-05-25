@@ -25,7 +25,7 @@ class Updater:
         self.pyproject_data = self.load() if pyproject_toml_path is not None else None
         self._dry_run = True
         self._force_latest = False
-        self._py_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+        self._py_version = None
 
     def get_dependency_name_and_operator(self, dependency_specifier):
         illegal_chars = ("/", ":", "@")
@@ -120,7 +120,9 @@ class Updater:
             return match.group(1).strip()
         return package_name.strip()
 
-    def fetch_new_package_version(self, package_name, force_latest=False):
+    def fetch_new_package_version(
+        self, package_name, py_version=f"{sys.version_info.major}.{sys.version_info.minor}", force_latest=False
+    ):
         url = f"https://pypi.org/pypi/{package_name}/json"
         try:
             response = requests.get(url, timeout=10)
@@ -149,7 +151,7 @@ class Updater:
                         compatible = True  # no constraint, assume compatible
                         continue
                     try:
-                        if SpecifierSet(requires_python).contains(self._py_version):
+                        if SpecifierSet(requires_python).contains(self.py_version):
                             compatible = True
                         else:
                             compatible = False
