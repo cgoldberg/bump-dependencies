@@ -231,14 +231,14 @@ def main():
         help="don't write changes to pyproject.toml",
     )
     parser.add_argument(
-        "--latest",
-        action="store_true",
-        help="always use latest available package versions",
-    )
-    parser.add_argument(
         "--path",
         default=os.path.join(os.getcwd(), "pyproject.toml"),
         help="path to pyproject.toml (defaults to current directory)",
+    )
+    parser.add_argument(
+        "--latest",
+        action="store_true",
+        help="always use latest available package versions",
     )
     parser.add_argument(
         "--py-version",
@@ -247,4 +247,6 @@ def main():
         help="python version for package compatibility",
     )
     args = parser.parse_args()
+    if args.latest and args.py_version:
+        parser.error("--latest and --py_version cannot be used together")
     run(pyproject_toml_path=args.path, dry_run=args.dry_run, py_version=args.py_version, force_latest=args.latest)
