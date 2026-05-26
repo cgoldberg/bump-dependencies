@@ -7,6 +7,7 @@ import argparse
 import os
 import re
 import sys
+from pathlib import Path
 
 import requests
 import requirements
@@ -242,7 +243,7 @@ def main():
     )
     parser.add_argument(
         "--path",
-        default=os.path.join(os.getcwd(), "pyproject.toml"),
+        default=str(Path.cwd() / "pyproject.toml"),
         help="path to pyproject.toml (defaults to current directory)",
     )
     parser.add_argument(
