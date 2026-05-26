@@ -225,7 +225,10 @@ def run(pyproject_toml_path, py_version, force_latest, dry_run):
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    def formatter(prog):
+        return argparse.HelpFormatter(prog, max_help_position=30)
+
+    parser = argparse.ArgumentParser(formatter_class=formatter)
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -233,14 +236,14 @@ def main():
         help="don't write changes to pyproject.toml",
     )
     parser.add_argument(
-        "--path",
-        default=os.path.join(os.getcwd(), "pyproject.toml"),
-        help="path to pyproject.toml (defaults to current directory)",
-    )
-    parser.add_argument(
         "--latest",
         action="store_true",
         help="always use latest available package versions",
+    )
+    parser.add_argument(
+        "--path",
+        default=os.path.join(os.getcwd(), "pyproject.toml"),
+        help="path to pyproject.toml (defaults to current directory)",
     )
     parser.add_argument(
         "--py-version",

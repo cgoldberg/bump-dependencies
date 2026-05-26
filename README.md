@@ -40,12 +40,14 @@ pip install bump-dependencies
 ## CLI Options:
 
 ```
-usage: bump_dependencies [-h] [--dry-run] [--path PATH]
+usage: bump_dependencies [-h] [--dry-run] [--latest] [--path PATH] [--py-version PY_VERSION]
 
 options:
-  -h, --help   show this help message and exit
-  --dry-run    don't write changes to pyproject.toml
-  --path PATH  path to pyproject.toml (defaults to current directory)
+  -h, --help               show this help message and exit
+  --dry-run                don't write changes to pyproject.toml
+  --latest                 always use latest available package versions
+  --path PATH              path to pyproject.toml (defaults to current directory)
+  --py-version PY_VERSION  python version for package compatibility
 ```
 
 ## Usage:
