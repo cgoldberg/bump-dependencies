@@ -195,57 +195,77 @@ def test_package_base_name(package_name):
     assert base_name == "foo"
 
 
+pyproject_toml_data = r"""
+[project]
+name = "foo"
+requires-python = ">=3.9"
+dependencies = [
+    "requests==2.32.1",
+    "numpy>=1.26.4",
+    "pandas~=1.4",
+]
+[project.optional-dependencies]
+socks = [
+    "pysocks>=1.5.6",
+    "httpbin~=0.9.0",
+]
+[dependency-groups]
+dev = [
+    "wheel",
+    "build>=1.1.2.post1",
+]
+test = [
+    "pytest>=4",
+    "pytest-timeout>2.2",
+]
+"""
+
+
+pyproject_toml_pattern = r"""
+\[project\]
+name = "foo"
+requires-python = ">=3.9"
+dependencies = \[
+    "requests==(.+)",
+    "numpy>=(.+)",
+    "pandas~=(.+)",
+\]
+\[project.optional-dependencies\]
+socks = \[
+    "pysocks>=(.+)",
+    "httpbin~=(.+)",
+\]
+\[dependency-groups\]
+dev = \[
+    "wheel",
+    "build>=(.+)",
+\]
+test = \[
+    "pytest>=(.+)",
+    "pytest-timeout>(.+)",
+\]
+"""
+
+
 def test_update():
-    data = r"""
-        [project]
-        name = "foo"
-        requires-python = ">=3.9"
-        dependencies = [
-            "requests==2.32.1",
-            "numpy>=1.26.4",
-            "pandas~=1.4",
-        ]
-        [project.optional-dependencies]
-        socks = [
-            "pysocks>=1.5.6",
-            "httpbin~=0.9.0",
-        ]
-        [dependency-groups]
-        dev = [
-            "wheel",
-            "build>=1.1.2.post1",
-        ]
-        test = [
-            "pytest>=4",
-            "pytest-timeout>2.2",
-        ]
-        """
-    pattern = r"""
-        \[project\]
-        name = "foo"
-        requires-python = ">=3.9"
-        dependencies = \[
-            "requests==(.+)",
-            "numpy>=(.+)",
-            "pandas~=(.+)",
-        \]
-        \[project.optional-dependencies\]
-        socks = \[
-            "pysocks>=(.+)",
-            "httpbin~=(.+)",
-        \]
-        \[dependency-groups\]
-        dev = \[
-            "wheel",
-            "build>=(.+)",
-        \]
-        test = \[
-            "pytest>=(.+)",
-            "pytest-timeout>(.+)",
-        \]
-        """
     updater = bd.Updater()
-    updater.pyproject_data = tomlkit.loads(data)
+    updater.pyproject_data = tomlkit.loads(pyproject_toml_data)
     updated_data = updater.update(dry_run=True)
     assert isinstance(updated_data, tomlkit.toml_document.TOMLDocument)
-    assert re.match(pattern, tomlkit.dumps(updated_data))
+    assert re.match(pyproject_toml_pattern, tomlkit.dumps(updated_data))
+
+
+def test_update_latest():
+    updater = bd.Updater()
+    updater.pyproject_data = tomlkit.loads(pyproject_toml_data)
+    updated_data = updater.update(dry_run=True, force_latest=True)
+    assert isinstance(updated_data, tomlkit.toml_document.TOMLDocument)
+    assert re.match(pyproject_toml_pattern, tomlkit.dumps(updated_data))
+
+
+def test_update_compatible_version():
+    updater = bd.Updater()
+    updater.pyproject_data = tomlkit.loads(pyproject_toml_data)
+    updated_data = updater.update(dry_run=True, py_version="3.12")
+    assert isinstance(updated_data, tomlkit.toml_document.TOMLDocument)
+    assert re.match(pyproject_toml_pattern, tomlkit.dumps(updated_data))
