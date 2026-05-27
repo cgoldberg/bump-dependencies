@@ -46,7 +46,6 @@ dev = [
     "tox",
 ]
 lint = [
-    "refurb",
     "ruff",
 ]
 test = [
@@ -60,8 +59,9 @@ validate = [
 [tool.setuptools]
 package-dir = {"" = "src"}
 
-[tool.pytest.ini_options]
-addopts = "-vv" # extra verbose
+[tool.pytest]
+addopts = ["-vv"]
+tmp_path_retention_policy = "none"
 
 [tool.ruff]
 line-length = 120
@@ -70,12 +70,9 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = [
-    "D", "E", "F", "I", "PT", "RUF", "TID", "W"
+    "E", "F", "I", "PT", "RUF", "TID", "W"
 ]
-extend-ignore = [
-    "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "D203",
-    "D205", "D211", "D213", "D400", "D401", "RUF012"
-]
+extend-ignore = []
 fixable = ["ALL"]
 
 [tool.ruff.format]
