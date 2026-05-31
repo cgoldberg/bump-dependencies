@@ -6,12 +6,8 @@
 import argparse
 import os
 import re
-import shutil
-import subprocess
 import sys
 from pathlib import Path
-from tempfile import TemporaryDirectory
-from venv import EnvBuilder
 
 import requests
 import requirements
@@ -30,7 +26,7 @@ class Updater:
         self.pyproject_data = self.load() if pyproject_toml_path is not None else None
         self._dry_run = True
         self._force_latest = False
-        self._py_version = None
+        self._requires_python_spec = None
 
     def get_dependency_name_and_operator(self, dependency_specifier):
         illegal_chars = ("/", ":", "@")
@@ -123,46 +119,59 @@ class Updater:
             return match.group(1).strip()
         return package_name.strip()
 
+    def _extract_bounds(self, spec):
+        min_ver = None
+        max_ver = None
+        for s in spec:
+            v = Version(s.version)
+            if s.operator in (">=", ">"):
+                min_ver = v if min_ver is None else max(min_ver, v)
+            elif s.operator in ("<", "<="):
+                max_ver = v if max_ver is None else min(max_ver, v)
+        return min_ver, max_ver
+
+    def _intersects(self, spec_a, spec_b):
+        a_min, a_max = self._extract_bounds(spec_a)
+        b_min, b_max = self._extract_bounds(spec_b)
+        lo = max(filter(None, [a_min, b_min]), default=None)
+        hi = min(filter(None, [a_max, b_max]), default=None)
+        if lo and hi and lo > hi:
+            return False
+        return True
+
+    def _compatible(self, requires_python, user_spec):
+        if not requires_python:
+            return True
+        try:
+            pkg_spec = SpecifierSet(requires_python)
+        except Exception:
+            return True
+        return self._intersects(user_spec, pkg_spec)
+
     def fetch_new_package_version(self, package_name):
         url = f"https://pypi.org/pypi/{package_name}/json"
         try:
             response = requests.get(url, timeout=10)
             response.raise_for_status()
         except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError):
-            print("error connecting to pypi.org")
-            return None
+            sys.exit("error connecting to pypi.org")
         data = response.json()
         if self._force_latest:
-            return response.json()["info"]["version"]
-        else:
-            latest = None
-            for version_str, files in data.get("releases", {}).items():
-                try:
-                    ver = Version(version_str)
-                except InvalidVersion:
-                    continue
-                # skip pre-releases
-                if ver.is_prerelease:
-                    continue
-                # check Requires-Python across release files
-                compatible = False
-                for f in files:
-                    requires_python = f.get("requires_python")
-                    if not requires_python:
-                        compatible = True  # no constraint, assume compatible
-                        continue
-                    try:
-                        if SpecifierSet(requires_python).contains(self._py_version):
-                            compatible = True
-                        else:
-                            compatible = False
-                            break
-                    except Exception:
-                        continue
-                if compatible:
-                    if latest is None or ver > latest:
-                        latest = ver
-            return str(latest) if latest else None
+            return response.data["info"]["version"]
+        user_spec = SpecifierSet(self._requires_python_spec)
+        for ver_str in sorted(data["releases"].keys(), key=Version, reverse=True):
+            try:
+                ver = Version(ver_str)
+            except InvalidVersion:
+                continue
+            if ver.is_prerelease:
+                continue
+            files = data["releases"][ver_str]
+            if not files:
+                continue
+            if any(self._compatible(f.get("requires_python"), user_spec) for f in files):
+                return str(ver)
+        return None
 
     def load(self):
         print(f"loading: {self.pyproject_toml_path}")
@@ -181,18 +190,21 @@ class Updater:
             exit(f"invalid pyproject.toml: {e.message}")
         return pyproject_data
 
-    def update(self, py_version=None, force_latest=False, dry_run=False):
+    def update(self, force_latest, dry_run):
         self._dry_run = dry_run
         self._force_latest = force_latest
-        self._py_version = py_version or self._py_version
+        try:
+            self._requires_python_spec = self.pyproject_data["project"]["requires-python"]
+        except Exception:
+            sys.exit("could not find 'requires-python' specifier in pyproject.toml")
         try:
             dependencies_groups_map = self.get_dependencies_groups()
-        except ValueError as e:
-            exit(e)
+        except Exception as e:
+            sys.exit(e)
         # update 'tomlkit.items` in-place to maintain the formatting from the original toml file
-        for key, value in dependencies_groups_map.items():
+        for key, project_dependencies in dependencies_groups_map.items():
             if key == "project":
-                updated_deps = self.update_dependencies(value)
+                updated_deps = self.update_dependencies(project_dependencies)
                 dep_list = self.pyproject_data["project"]["dependencies"]
                 for i in range(len(dep_list)):
                     dep_list[i] = updated_deps[i]
@@ -216,31 +228,12 @@ class Updater:
 
         return self.pyproject_data
 
-    def _install_in_venv(self, dependency_groups):
-        """Installs all dependencies, optional-dependencies, and dependency-groups in a virtual env."""
-        with TemporaryDirectory(prefix="venv_") as tmpdir:
-            venv_dir = Path(tmpdir)
-            builder = EnvBuilder(with_pip=True)
-            context = builder.create(venv_dir)
-            venv_python = Path(context.env_exe)
-            try:
-                group_args = [item for group in dependency_groups for item in ("--group", group)]
-                cmd = [venv_python, "-m", "pip", "install", *group_args, ".[all]"]
-                subprocess.run(
-                    cmd,
-                    check=True,
-                )
-                print("Packages installed successfully.")
-            except Exception:
-                shutil.rmtree(venv_dir)
-                raise
 
-
-def run(pyproject_toml_path, py_version, force_latest, dry_run):
+def run(pyproject_toml_path, force_latest, dry_run):
     updater = Updater(pyproject_toml_path)
     console = Console()
     with console.status(""):
-        pyproject_data = updater.update(py_version=py_version, force_latest=force_latest, dry_run=dry_run)
+        pyproject_data = updater.update(force_latest, dry_run)
         return pyproject_data
 
 
@@ -265,13 +258,5 @@ def main():
         default=str(Path.cwd() / "pyproject.toml"),
         help="path to pyproject.toml (defaults to current directory)",
     )
-    parser.add_argument(
-        "--py-version",
-        dest="py_version",
-        default=f"{sys.version_info.major}.{sys.version_info.minor}",
-        help="python version for package compatibility",
-    )
     args = parser.parse_args()
-    if args.latest and args.py_version:
-        parser.error("--latest and --py_version cannot be used together")
-    run(pyproject_toml_path=args.path, dry_run=args.dry_run, py_version=args.py_version, force_latest=args.latest)
+    run(pyproject_toml_path=args.path, force_latest=args.latest, dry_run=args.dry_run)
