@@ -81,8 +81,7 @@ class Updater:
 
     def update_dependency(self, dependency_specifier):
         dependency_name, operator = self.get_dependency_name_and_operator(dependency_specifier)
-        new_dependency_version = self.fetch_new_package_version(
-            self.get_package_base_name(dependency_name))
+        new_dependency_version = self.fetch_new_package_version(self.get_package_base_name(dependency_name))
         updated_dependency_specifier = None
         if new_dependency_version is not None:
             if ";" in dependency_specifier:
@@ -209,7 +208,6 @@ class Updater:
                     updated_deps = self.update_dependencies(dep_list)
                     for i in range(len(dep_list)):
                         dep_list[i] = updated_deps[i]
-
         if dry_run:
             print("\nnot writing new pyproject.toml with updated dependencies")
         else:
