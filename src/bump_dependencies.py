@@ -6,8 +6,12 @@
 import argparse
 import os
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from venv import EnvBuilder
 
 import requests
 import requirements
@@ -78,7 +82,7 @@ class Updater:
     def update_dependency(self, dependency_specifier):
         dependency_name, operator = self.get_dependency_name_and_operator(dependency_specifier)
         new_dependency_version = self.fetch_new_package_version(
-            self.get_package_base_name(dependency_name), self._force_latest
+            self.get_package_base_name(dependency_name), self._pyversion, self._force_latest
         )
         updated_dependency_specifier = None
         if new_dependency_version is not None:
@@ -121,9 +125,7 @@ class Updater:
             return match.group(1).strip()
         return package_name.strip()
 
-    def fetch_new_package_version(
-        self, package_name, py_version=f"{sys.version_info.major}.{sys.version_info.minor}", force_latest=False
-    ):
+    def fetch_new_package_version(self, package_name):
         url = f"https://pypi.org/pypi/{package_name}/json"
         try:
             response = requests.get(url, timeout=10)
@@ -132,7 +134,7 @@ class Updater:
             print("error connecting to pypi.org")
             return None
         data = response.json()
-        if force_latest:
+        if self._force_latest:
             return response.json()["info"]["version"]
         else:
             latest = None
@@ -152,7 +154,7 @@ class Updater:
                         compatible = True  # no constraint, assume compatible
                         continue
                     try:
-                        if SpecifierSet(requires_python).contains(self.py_version):
+                        if SpecifierSet(requires_python).contains(self._py_version):
                             compatible = True
                         else:
                             compatible = False
@@ -208,13 +210,33 @@ class Updater:
                     updated_deps = self.update_dependencies(dep_list)
                     for i in range(len(dep_list)):
                         dep_list[i] = updated_deps[i]
+
         if dry_run:
             print("\nnot writing new pyproject.toml with updated dependencies")
         else:
             with open(self.pyproject_toml_path, "w") as f:
                 tomlkit.dump(self.pyproject_data, f)
-            print("\ngenerated new pyproject.toml with updated dependencies")
+
         return self.pyproject_data
+
+    def _install_in_venv(self, dependency_groups):
+        """Installs all dependencies, optional-dependencies, and dependency-groups in a virtual env."""
+        with TemporaryDirectory(prefix="venv_") as tmpdir:
+            venv_dir = Path(tmpdir)
+            builder = EnvBuilder(with_pip=True)
+            context = builder.create(venv_dir)
+            venv_python = Path(context.env_exe)
+            try:
+                group_args = [item for group in dependency_groups for item in ("--group", group)]
+                cmd = [venv_python, "-m", "pip", "install", *group_args, ".[all]"]
+                subprocess.run(
+                    cmd,
+                    check=True,
+                )
+                print("Packages installed successfully.")
+            except Exception:
+                shutil.rmtree(venv_dir)
+                raise
 
 
 def run(pyproject_toml_path, py_version, force_latest, dry_run):
