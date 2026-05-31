@@ -82,8 +82,7 @@ class Updater:
     def update_dependency(self, dependency_specifier):
         dependency_name, operator = self.get_dependency_name_and_operator(dependency_specifier)
         new_dependency_version = self.fetch_new_package_version(
-            self.get_package_base_name(dependency_name), self._pyversion, self._force_latest
-        )
+            self.get_package_base_name(dependency_name))
         updated_dependency_specifier = None
         if new_dependency_version is not None:
             if ";" in dependency_specifier:
