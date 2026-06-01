@@ -7,6 +7,7 @@ import argparse
 import os
 import re
 import sys
+from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
 
@@ -16,15 +17,25 @@ import tomlkit
 from packaging.requirements import InvalidRequirement
 from packaging.specifiers import SpecifierSet
 from packaging.version import InvalidVersion, Version
-from rich.console import Console
+from rich.console import Console as RichConsole
 from validate_pyproject import api as validate_pyproject_api
 from validate_pyproject.errors import ValidationError
 
 
+class PlainConsole:
+    @contextmanager
+    def status(self, msg=""):
+        yield
+
+    def print(self, *args, **kwargs):
+        print(*args, **kwargs)
+
+
 class Updater:
-    def __init__(self, pyproject_toml_path=None):
+    def __init__(self, pyproject_toml_path=None, plain=True):
         self.pyproject_toml_path = pyproject_toml_path
         self.pyproject_data = self.load() if pyproject_toml_path is not None else None
+        self.console = PlainConsole() if plain else RichConsole()
         self._requires_python_spec = None
         self._dry_run = True
 
@@ -247,49 +258,48 @@ class Updater:
         return pyproject_data
 
     def update(self, dry_run=True):
-        self._dry_run = dry_run
-        try:
-            dependencies_groups_map = self.get_dependencies_groups()
-        except Exception as e:
-            sys.exit(e)
-        pyproject_data = deepcopy(self.pyproject_data)
-        # update 'tomlkit.items` in-place to maintain the formatting from the original toml file
-        for key, project_dependencies in dependencies_groups_map.items():
-            if key == "project":
-                updated_deps = self.update_dependencies(project_dependencies)
-                dep_list = pyproject_data["project"]["dependencies"]
-                for i in range(len(dep_list)):
-                    dep_list[i] = updated_deps[i]
-            if key == "optional-dependencies":
-                dep_groups = pyproject_data["project"][key]
-                for dep_group, dep_list in dep_groups.items():
-                    updated_deps = self.update_dependencies(dep_list)
+        with self.console.status(""):
+            self._dry_run = dry_run
+            try:
+                dependencies_groups_map = self.get_dependencies_groups()
+            except Exception as e:
+                sys.exit(e)
+            pyproject_data = deepcopy(self.pyproject_data)
+            # update 'tomlkit.items` in-place to maintain the formatting from the original toml file
+            for key, project_dependencies in dependencies_groups_map.items():
+                if key == "project":
+                    updated_deps = self.update_dependencies(project_dependencies)
+                    dep_list = pyproject_data["project"]["dependencies"]
                     for i in range(len(dep_list)):
                         dep_list[i] = updated_deps[i]
-            if key == "dependency-groups":
-                dep_groups = pyproject_data[key]
-                for dep_group, dep_list in dep_groups.items():
-                    updated_deps = self.update_dependencies(dep_list)
-                    for i in range(len(dep_list)):
-                        dep_list[i] = updated_deps[i]
-        if pyproject_data == self.pyproject_data:
-            print("\nno dependency updates needed. not writing new pyproject.toml.")
-        else:
-            if dry_run:
-                print("\ndry-run enabled. not generating new pyproject.toml with updated dependencies")
+                if key == "optional-dependencies":
+                    dep_groups = pyproject_data["project"][key]
+                    for dep_group, dep_list in dep_groups.items():
+                        updated_deps = self.update_dependencies(dep_list)
+                        for i in range(len(dep_list)):
+                            dep_list[i] = updated_deps[i]
+                if key == "dependency-groups":
+                    dep_groups = pyproject_data[key]
+                    for dep_group, dep_list in dep_groups.items():
+                        updated_deps = self.update_dependencies(dep_list)
+                        for i in range(len(dep_list)):
+                            dep_list[i] = updated_deps[i]
+            if pyproject_data == self.pyproject_data:
+                self.console.print("\nno dependency updates needed. not writing new pyproject.toml.")
             else:
-                with open(self.pyproject_toml_path, "w") as f:
-                    tomlkit.dump(pyproject_data, f)
-                print("\ngenerated new pyproject.toml with updated dependencies")
-        return pyproject_data
+                if dry_run:
+                    self.console.print("\ndry-run enabled. not generating new pyproject.toml with updated dependencies")
+                else:
+                    with open(self.pyproject_toml_path, "w") as f:
+                        tomlkit.dump(pyproject_data, f)
+                    self.console.print("\ngenerated new pyproject.toml with updated dependencies")
+            return pyproject_data
 
 
-def run(pyproject_toml_path, dry_run):
-    updater = Updater(pyproject_toml_path)
-    console = Console()
-    with console.status(""):
-        pyproject_data = updater.update(dry_run)
-        return pyproject_data
+def run(pyproject_toml_path, dry_run, plain):
+    updater = Updater(pyproject_toml_path, plain)
+    pyproject_data = updater.update(dry_run)
+    return pyproject_data
 
 
 def main():
@@ -304,9 +314,14 @@ def main():
         help="don't write changes to pyproject.toml",
     )
     parser.add_argument(
+        "--plain",
+        action="store_true",
+        help="output in plain text without decorations",
+    )
+    parser.add_argument(
         "--path",
         default=str(Path.cwd() / "pyproject.toml"),
         help="path to pyproject.toml (defaults to current directory)",
     )
     args = parser.parse_args()
-    run(pyproject_toml_path=args.path, dry_run=args.dry_run)
+    run(pyproject_toml_path=args.path, dry_run=args.dry_run, plain=args.plain)
