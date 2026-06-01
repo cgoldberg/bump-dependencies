@@ -27,7 +27,6 @@ class Updater:
         self.pyproject_data = self.load() if pyproject_toml_path is not None else None
         self._requires_python_spec = None
         self._dry_run = True
-        self._force_latest = False
 
     @property
     def requires_python_spec(self):
@@ -93,9 +92,7 @@ class Updater:
 
     def update_dependency(self, dependency_specifier):
         dependency_name, operator = self.get_dependency_name_and_operator(dependency_specifier)
-        new_dependency_version = self.fetch_new_package_version(
-            self.get_package_base_name(dependency_name), force_latest=self._force_latest
-        )
+        new_dependency_version = self.fetch_new_package_version(self.get_package_base_name(dependency_name))
         updated_dependency_specifier = None
         if new_dependency_version is not None:
             if ";" in dependency_specifier:
@@ -190,7 +187,7 @@ class Updater:
         pkg_spec = SpecifierSet(requires_python)
         return self._intersects(user_spec, pkg_spec)
 
-    def fetch_new_package_version(self, package_name, force_latest=False):
+    def fetch_new_package_version(self, package_name):
         url = f"https://pypi.org/pypi/{package_name}/json"
         try:
             response = requests.get(url, timeout=10)
@@ -200,8 +197,6 @@ class Updater:
         except requests.exceptions.HTTPError:
             return None
         data = response.json()
-        if force_latest:
-            return data["info"]["version"]
         requires_python_spec = self.requires_python_spec
         try:
             user_spec = SpecifierSet(requires_python_spec)
@@ -251,9 +246,8 @@ class Updater:
             exit(f"invalid pyproject.toml: {e.message}")
         return pyproject_data
 
-    def update(self, force_latest=False, dry_run=True):
+    def update(self, dry_run=True):
         self._dry_run = dry_run
-        self._force_latest = force_latest
         try:
             dependencies_groups_map = self.get_dependencies_groups()
         except Exception as e:
@@ -290,11 +284,11 @@ class Updater:
         return pyproject_data
 
 
-def run(pyproject_toml_path, force_latest, dry_run):
+def run(pyproject_toml_path, dry_run):
     updater = Updater(pyproject_toml_path)
     console = Console()
     with console.status(""):
-        pyproject_data = updater.update(force_latest, dry_run)
+        pyproject_data = updater.update(dry_run)
         return pyproject_data
 
 
@@ -310,14 +304,9 @@ def main():
         help="don't write changes to pyproject.toml",
     )
     parser.add_argument(
-        "--latest",
-        action="store_true",
-        help="always use latest available package versions",
-    )
-    parser.add_argument(
         "--path",
         default=str(Path.cwd() / "pyproject.toml"),
         help="path to pyproject.toml (defaults to current directory)",
     )
     args = parser.parse_args()
-    run(pyproject_toml_path=args.path, force_latest=args.latest, dry_run=args.dry_run)
+    run(pyproject_toml_path=args.path, dry_run=args.dry_run)
