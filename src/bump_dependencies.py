@@ -285,9 +285,9 @@ class Updater:
                 print("\ndry-run enabled. not generating new pyproject.toml with updated dependencies")
             else:
                 with open(self.pyproject_toml_path, "w") as f:
-                    tomlkit.dump(self.pyproject_data, f)
+                    tomlkit.dump(pyproject_data, f)
                 print("\ngenerated new pyproject.toml with updated dependencies")
-        return self.pyproject_data
+        return pyproject_data
 
 
 def run(pyproject_toml_path, force_latest, dry_run):
