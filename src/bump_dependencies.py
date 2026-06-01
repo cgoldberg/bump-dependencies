@@ -22,7 +22,7 @@ from validate_pyproject.errors import ValidationError
 
 
 def _setup_logger(name="updater"):
-    logging.basicConfig(level=logging.WARNING)  # silence deps
+    logging.basicConfig(level=logging.WARNING) # silence deps
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
     logger.propagate = False
