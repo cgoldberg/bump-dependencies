@@ -11,7 +11,7 @@ license-files = ["LICENSE"]
 authors = [{name = "Corey Goldberg"}]
 maintainers = [{name = "Corey Goldberg"}]
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 keywords = ["package", "dependencies", "requirements", "bump", "upgrade"]
 classifiers = [
     "Environment :: Console",
