@@ -165,27 +165,29 @@ def test_name_and_operator_with_direct_reference_specifier(direct_reference_spec
 
 def test_fetch_resolved_package_version():
     updater = bd.Updater()
-    version = updater.fetch_new_package_version("requests")
+    updater.requires_python_spec = ">=3.13"
+    version = updater.fetch_new_package_version("bump-dependencies")
     assert isinstance(version, str)
     assert version[0].isdigit()
 
 
 def test_fetch_latest_package_version():
     updater = bd.Updater()
-    version = updater.fetch_new_package_version("requests", force_latest=True)
+    version = updater.fetch_new_package_version("bump-dependencies", force_latest=True)
     assert isinstance(version, str)
     assert version[0].isdigit()
 
 
-def test_fetch_compatible_package_version():
+def test_fetch_latest_package_version_with_incompatible_package():
     updater = bd.Updater()
-    version = updater.fetch_new_package_version("requests", py_version="3.12")
-    assert isinstance(version, str)
-    assert version[0].isdigit()
+    updater.requires_python_spec = "==3.0"
+    version = updater.fetch_new_package_version("bump-dependencies")
+    assert version is None
 
 
-def test_fetch_unavailable_package_version():
+def test_fetch_latest_package_version_with_unavailable_package():
     updater = bd.Updater()
+    updater.requires_python_spec = ">=3.13"
     version = updater.fetch_new_package_version("definitely-not-a-package-found-on-pypi-1234")
     assert version is None
 
@@ -259,13 +261,5 @@ def test_update_latest():
     updater = bd.Updater()
     updater.pyproject_data = tomlkit.loads(pyproject_toml_data)
     updated_data = updater.update(dry_run=True, force_latest=True)
-    assert isinstance(updated_data, tomlkit.toml_document.TOMLDocument)
-    assert re.match(pyproject_toml_pattern, tomlkit.dumps(updated_data))
-
-
-def test_update_compatible_version():
-    updater = bd.Updater()
-    updater.pyproject_data = tomlkit.loads(pyproject_toml_data)
-    updated_data = updater.update(dry_run=True, py_version="3.12")
     assert isinstance(updated_data, tomlkit.toml_document.TOMLDocument)
     assert re.match(pyproject_toml_pattern, tomlkit.dumps(updated_data))

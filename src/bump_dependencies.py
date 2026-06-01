@@ -7,6 +7,7 @@ import argparse
 import os
 import re
 import sys
+from copy import deepcopy
 from pathlib import Path
 
 import requests
@@ -24,9 +25,24 @@ class Updater:
     def __init__(self, pyproject_toml_path=None):
         self.pyproject_toml_path = pyproject_toml_path
         self.pyproject_data = self.load() if pyproject_toml_path is not None else None
+        self._requires_python_spec = None
         self._dry_run = True
         self._force_latest = False
-        self._requires_python_spec = None
+
+    @property
+    def requires_python_spec(self):
+        if self._requires_python_spec is not None:
+            return self._requires_python_spec
+        if not self.pyproject_data:
+            return None
+        try:
+            return self.pyproject_data["project"]["requires-python"]
+        except KeyError:
+            raise KeyError("could not find 'project.requires-python' in pyproject.toml")
+
+    @requires_python_spec.setter
+    def requires_python_spec(self, value):
+        self._requires_python_spec = value
 
     def get_dependency_name_and_operator(self, dependency_specifier):
         illegal_chars = ("/", ":", "@")
@@ -77,7 +93,9 @@ class Updater:
 
     def update_dependency(self, dependency_specifier):
         dependency_name, operator = self.get_dependency_name_and_operator(dependency_specifier)
-        new_dependency_version = self.fetch_new_package_version(self.get_package_base_name(dependency_name))
+        new_dependency_version = self.fetch_new_package_version(
+            self.get_package_base_name(dependency_name), force_latest=self._force_latest
+        )
         updated_dependency_specifier = None
         if new_dependency_version is not None:
             if ";" in dependency_specifier:
@@ -120,56 +138,99 @@ class Updater:
         return package_name.strip()
 
     def _extract_bounds(self, spec):
+        """Convert a SpecifierSet into inclusive lower/upper bounds.
+
+        Supports the common requires-python forms:
+            >=3.8
+            >3.8
+            <4
+            <=3.12
+            >=3.8,<4
+
+        This is not fully PEP 440 correct. It handles the overwhelming majority of real-world requires-python values,
+        but it does not correctly model exclusions such as: >=3.8,<4,!=3.9.*
+        """
         min_ver = None
         max_ver = None
         for s in spec:
+            if s.operator == "!=":
+                continue
+            if "*" in s.version:
+                continue
             v = Version(s.version)
             if s.operator in (">=", ">"):
                 min_ver = v if min_ver is None else max(min_ver, v)
-            elif s.operator in ("<", "<="):
+            elif s.operator in ("<=", "<"):
                 max_ver = v if max_ver is None else min(max_ver, v)
+            elif s.operator == "==":
+                min_ver = v
+                max_ver = v
         return min_ver, max_ver
 
     def _intersects(self, spec_a, spec_b):
+        """Check if if the two SpecifierSets have any possible overlap."""
         a_min, a_max = self._extract_bounds(spec_a)
         b_min, b_max = self._extract_bounds(spec_b)
-        lo = max(filter(None, [a_min, b_min]), default=None)
-        hi = min(filter(None, [a_max, b_max]), default=None)
-        if lo and hi and lo > hi:
+        lower = max(
+            (v for v in (a_min, b_min) if v is not None),
+            default=None,
+        )
+        upper = min(
+            (v for v in (a_max, b_max) if v is not None),
+            default=None,
+        )
+        if lower is not None and upper is not None and lower > upper:
             return False
         return True
 
     def _compatible(self, requires_python, user_spec):
+        """Check if requires-python constraint overlaps with the user's constraint."""
         if not requires_python:
             return True
-        try:
-            pkg_spec = SpecifierSet(requires_python)
-        except Exception:
-            return True
+        pkg_spec = SpecifierSet(requires_python)
         return self._intersects(user_spec, pkg_spec)
 
-    def fetch_new_package_version(self, package_name):
+    def fetch_new_package_version(self, package_name, force_latest=False):
         url = f"https://pypi.org/pypi/{package_name}/json"
         try:
             response = requests.get(url, timeout=10)
             response.raise_for_status()
-        except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError):
+        except requests.exceptions.ConnectionError:
             sys.exit("error connecting to pypi.org")
+        except requests.exceptions.HTTPError:
+            return None
         data = response.json()
-        if self._force_latest:
-            return response.data["info"]["version"]
-        user_spec = SpecifierSet(self._requires_python_spec)
-        for ver_str in sorted(data["releases"].keys(), key=Version, reverse=True):
+        if force_latest:
+            return data["info"]["version"]
+        requires_python_spec = self.requires_python_spec
+        try:
+            user_spec = SpecifierSet(requires_python_spec)
+        except Exception as e:
+            sys.exit(f"invalid requires-python specifier '{requires_python_spec}': {e}")
+        for ver_str in sorted(data.get("releases", {}), key=Version, reverse=True):
             try:
                 ver = Version(ver_str)
             except InvalidVersion:
                 continue
             if ver.is_prerelease:
                 continue
-            files = data["releases"][ver_str]
+            files = data["releases"].get(ver_str, [])
             if not files:
                 continue
-            if any(self._compatible(f.get("requires_python"), user_spec) for f in files):
+            compatible = False
+            for file_info in files:
+                release_requires = file_info.get("requires_python")
+                if not release_requires:
+                    compatible = True
+                    break
+                try:
+                    SpecifierSet(release_requires)
+                except Exception as e:
+                    sys.exit(f"invalid requires-python specifier in {package_name} {ver}: '{release_requires}': {e}")
+                if self._compatible(release_requires, user_spec):
+                    compatible = True
+                    break
+            if compatible:
                 return str(ver)
         return None
 
@@ -190,42 +251,42 @@ class Updater:
             exit(f"invalid pyproject.toml: {e.message}")
         return pyproject_data
 
-    def update(self, force_latest, dry_run):
+    def update(self, force_latest=False, dry_run=True):
         self._dry_run = dry_run
         self._force_latest = force_latest
-        try:
-            self._requires_python_spec = self.pyproject_data["project"]["requires-python"]
-        except Exception:
-            sys.exit("could not find 'requires-python' specifier in pyproject.toml")
         try:
             dependencies_groups_map = self.get_dependencies_groups()
         except Exception as e:
             sys.exit(e)
+        pyproject_data = deepcopy(self.pyproject_data)
         # update 'tomlkit.items` in-place to maintain the formatting from the original toml file
         for key, project_dependencies in dependencies_groups_map.items():
             if key == "project":
                 updated_deps = self.update_dependencies(project_dependencies)
-                dep_list = self.pyproject_data["project"]["dependencies"]
+                dep_list = pyproject_data["project"]["dependencies"]
                 for i in range(len(dep_list)):
                     dep_list[i] = updated_deps[i]
             if key == "optional-dependencies":
-                dep_groups = self.pyproject_data["project"][key]
+                dep_groups = pyproject_data["project"][key]
                 for dep_group, dep_list in dep_groups.items():
                     updated_deps = self.update_dependencies(dep_list)
                     for i in range(len(dep_list)):
                         dep_list[i] = updated_deps[i]
             if key == "dependency-groups":
-                dep_groups = self.pyproject_data[key]
+                dep_groups = pyproject_data[key]
                 for dep_group, dep_list in dep_groups.items():
                     updated_deps = self.update_dependencies(dep_list)
                     for i in range(len(dep_list)):
                         dep_list[i] = updated_deps[i]
-        if dry_run:
-            print("\nnot writing new pyproject.toml with updated dependencies")
+        if pyproject_data == self.pyproject_data:
+            print("\nno dependency updates needed. not writing new pyproject.toml.")
         else:
-            with open(self.pyproject_toml_path, "w") as f:
-                tomlkit.dump(self.pyproject_data, f)
-
+            if dry_run:
+                print("\ndry-run enabled. not generating new pyproject.toml with updated dependencies")
+            else:
+                with open(self.pyproject_toml_path, "w") as f:
+                    tomlkit.dump(self.pyproject_data, f)
+                print("\ngenerated new pyproject.toml with updated dependencies")
         return self.pyproject_data
 
 
