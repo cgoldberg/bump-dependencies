@@ -1,8 +1,8 @@
 # bump-dependencies
 
-### Bump your Python package dependencies
+### Bump Python package dependencies
 
-*Update dependency specifiers in `pyproject.toml` to latest versions*
+*Update dependency specifiers in `pyproject.toml` to latest compatible versions*
 
 ---
 
@@ -18,12 +18,17 @@
 ## About:
 
 `bump_dependencies` is a Python CLI program that generates a new packaging
-configuration file (`pyproject.toml`) file with updated package dependencies.
+configuration file (`pyproject.toml`) file with updated compatible package
+dependencies.
 
-- for more information on declaring dependencies in a configuration file, see the [PyPA pyproject.toml Spec][pypa-pyproject-dependencies]
-- for more information on version specifiers, see [PEP 440][pep-440] and the [PyPA Version Specifiers Spec][pypa-version-specifiers]
-- for more information on dependency specifiers, see [PEP 508][pep-508] and the [PyPA Dependency Specifiers Spec][pypa-dependency-specifiers]
-- for more information on dependency groups, see [PEP 735][pep-735] and the [PyPA Dependency Groups Spec][pypa-dependency-groups]
+- for more information on declaring dependencies in a configuration file, see
+  the [PyPA pyproject.toml specification][pypa-pyproject-dependencies]
+- for more information on version specifiers, see [PEP 440][pep-440] and the
+  [PyPA Version Specifiers specification][pypa-version-specifiers]
+- for more information on dependency specifiers, see [PEP 508][pep-508] and
+  the [PyPA Dependency Specifiers specification][pypa-dependency-specifiers]
+- for more information on dependency groups, see [PEP 735][pep-735] and the
+  [PyPA Dependency Groups specification][pypa-dependency-groups]
 
 ## Requirements:
 
@@ -85,7 +90,8 @@ dev = ["black==23.9.1", "ruff==0.9.5"]
 test = ["pytest>8", "pytest-mock>=3.11"]
 ```
 
-It will update dependency specifiers to the latest versions available on [PyPI][pypi-home]:
+It will update dependency specifiers to the latest compatible versions
+available on [PyPI][pypi-home]:
 
 ```
 [project]
