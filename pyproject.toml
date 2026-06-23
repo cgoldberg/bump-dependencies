@@ -77,4 +77,3 @@ fixable = ["ALL"]
 [tool.ruff.format]
 docstring-code-format = true
 docstring-code-line-length = 120
-
