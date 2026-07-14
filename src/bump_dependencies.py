@@ -203,6 +203,17 @@ class Updater:
         pkg_spec = SpecifierSet(requires_python)
         return self._intersects(user_spec, pkg_spec)
 
+    def _remove_invalid_versions(self, releases):
+        valid_releases = {}
+        for version, asset_meta in releases.items():
+            try:
+                ver = Version(version)
+                if not ver.is_prerelease:
+                    valid_releases[version] = asset_meta
+            except InvalidVersion:
+                pass
+        return valid_releases
+
     def fetch_new_package_version(self, package_name):
         url = f"https://pypi.org/pypi/{package_name}/json"
         try:
@@ -218,13 +229,9 @@ class Updater:
             user_spec = SpecifierSet(requires_python_spec)
         except Exception as e:
             sys.exit(f"invalid requires-python specifier '{requires_python_spec}': {e}")
-        for ver_str in sorted(data.get("releases", {}), key=Version, reverse=True):
-            try:
-                ver = Version(ver_str)
-            except InvalidVersion:
-                continue
-            if ver.is_prerelease:
-                continue
+        releases = self._remove_invalid_versions(data.get("releases", {}))
+        for ver_str in sorted(releases, key=Version, reverse=True):
+            ver = Version(ver_str)
             files = data["releases"].get(ver_str, [])
             if not files:
                 continue
