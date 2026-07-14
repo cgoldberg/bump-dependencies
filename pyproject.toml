@@ -70,7 +70,7 @@ target-version = "py310"
 select = [
     "E", "F", "I", "FURB", "PT", "RUF", "TID", "W"
 ]
-extend-ignore = []
+ignore = []
 fixable = ["ALL"]
 
 [tool.ruff.format]
