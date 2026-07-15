@@ -196,23 +196,23 @@ class Updater:
             return False
         return True
 
-    def _compatible(self, requires_python, user_spec):
+    def _is_compatible(self, requires_python, user_spec):
         """Check if requires-python constraint overlaps with the user's constraint."""
         if not requires_python:
             return True
         pkg_spec = SpecifierSet(requires_python)
         return self._intersects(user_spec, pkg_spec)
 
+    def _is_valid_stable_version(self, version):
+        try:
+            return not Version(version).is_prerelease
+        except InvalidVersion:
+            return False
+
     def _remove_invalid_versions(self, releases):
-        valid_releases = {}
-        for version, asset_meta in releases.items():
-            try:
-                ver = Version(version)
-                if not ver.is_prerelease:
-                    valid_releases[version] = asset_meta
-            except InvalidVersion:
-                pass
-        return valid_releases
+        return {
+            version: asset_meta for version, asset_meta in releases.items() if self._is_valid_stable_version(version)
+        }
 
     def fetch_new_package_version(self, package_name):
         url = f"https://pypi.org/pypi/{package_name}/json"
@@ -245,7 +245,7 @@ class Updater:
                     SpecifierSet(release_requires)
                 except Exception as e:
                     sys.exit(f"invalid requires-python specifier in {package_name} {ver}: '{release_requires}': {e}")
-                if self._compatible(release_requires, user_spec):
+                if self._is_compatible(release_requires, user_spec):
                     compatible = True
                     break
             if compatible:
