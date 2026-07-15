@@ -1,5 +1,6 @@
 # Copyright (c) 2025-2026 Corey Goldberg
-# License: MIT
+# SPDX-License-Identifier: MIT
+
 
 """Bump Python package dependencies in pyproject.toml."""
 
@@ -77,7 +78,7 @@ class Updater:
         operators = re.findall("|".join(valid_operators), dependency_specifier)
         if not operators:
             raise ValueError(f"no version specified: '{dependency_specifier}'")
-        elif len(operators) != 1:
+        if len(operators) != 1:
             raise ValueError(f"can't handle complex dependency specifier: '{dependency_specifier}'")
         operator = operators[0]
         dependency_name = dependency_specifier.replace(" ", "").split(operator)[0].strip()
@@ -192,9 +193,7 @@ class Updater:
             (v for v in (a_max, b_max) if v is not None),
             default=None,
         )
-        if lower is not None and upper is not None and lower > upper:
-            return False
-        return True
+        return lower is None or upper is None or lower <= upper
 
     def _is_compatible(self, requires_python, user_spec):
         """Check if requires-python constraint overlaps with the user's constraint."""
@@ -285,13 +284,13 @@ class Updater:
                     dep_list[i] = updated_deps[i]
             if key == "optional-dependencies":
                 dep_groups = pyproject_data["project"][key]
-                for dep_group, dep_list in dep_groups.items():
+                for dep_list in dep_groups.values():
                     updated_deps = self.update_dependencies(dep_list)
                     for i in range(len(dep_list)):
                         dep_list[i] = updated_deps[i]
             if key == "dependency-groups":
                 dep_groups = pyproject_data[key]
-                for dep_group, dep_list in dep_groups.items():
+                for dep_list in dep_groups.values():
                     updated_deps = self.update_dependencies(dep_list)
                     for i in range(len(dep_list)):
                         dep_list[i] = updated_deps[i]

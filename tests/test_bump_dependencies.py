@@ -1,5 +1,6 @@
 # Copyright (c) 2025-2026 Corey Goldberg
-# License: MIT
+# SPDX-License-Identifier: MIT
+
 
 """Tests for bump_dependencies module."""
 
