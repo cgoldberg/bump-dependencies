@@ -27,8 +27,8 @@ classifiers = [
 dependencies = [
     "requests==2.34.2",
     "requirements-parser==0.13.1",
-    "tomlkit==0.15.1",
-    "validate-pyproject[all]==0.26",
+    "tomlkit==0.15.3",
+    "validate-pyproject[all]==0.27",
 ]
 
 [project.scripts]
@@ -50,7 +50,7 @@ test = [
     "pytest",
 ]
 validate = [
-    "validate-pyproject[all]==0.26",
+    "validate-pyproject[all]==0.27",
 ]
 
 [tool.setuptools]
